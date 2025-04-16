@@ -1,103 +1,121 @@
-import Image from "next/image";
+import Navigation from '@/components/Navigation'
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="min-h-screen">
+      <Navigation />
+      
+      {/* Hero Section */}
+      <section className="h-screen flex items-center justify-center bg-stone-100">
+        <div className="container-custom text-center space-y-8">
+          <h1 className="heading-xl">
+            ME≠LABEL
+          </h1>
+          <p className="body-lg text-secondary max-w-2xl mx-auto">
+            わたしは病名じゃない。
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </section>
+
+      {/* Latest Articles */}
+      <section className="py-24 bg-stone-50">
+        <div className="container-custom">
+          <h2 className="heading-lg mb-12">最新の記事</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Article Card Placeholder */}
+            {[1, 2, 3].map((i) => (
+              <article key={i} className="group">
+                <div className="aspect-[16/9] bg-stone-200 mb-4" />
+                <div className="space-y-2">
+                  <span className="text-xs text-accent">JOURNAL</span>
+                  <h3 className="heading-md group-hover:text-accent transition-colors">
+                    記事タイトルがここに入ります
+                  </h3>
+                  <p className="text-secondary">
+                    記事の要約がここに入ります。このテキストは実際の記事の内容を反映して更新される予定です。
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Philosophy Section */}
+      <section className="py-24 bg-stone-100">
+        <div className="container-custom">
+          <h2 className="heading-lg mb-12">編集部からの問い</h2>
+          <div className="prose prose-stone lg:prose-lg max-w-4xl">
+            <blockquote className="text-2xl font-serif not-italic border-l-accent">
+              医療の"外"から世界を編みなおすとき、わたしたちは何を見出すのだろうか。
+            </blockquote>
+            <p className="text-secondary">
+              病気や障害によって社会から与えられるラベルは、時として私たちの存在を矮小化します。
+              しかし、そのラベルを超えて、一人の人間として生きる術を探ることは可能なはずです。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Voices Section */}
+      <section className="py-24 bg-stone-50">
+        <div className="container-custom">
+          <h2 className="heading-lg mb-12">VOICES</h2>
+          <div className="bg-white p-8 rounded-lg shadow-sm">
+            <div className="space-y-4">
+              <span className="text-xs text-accent">#生きる言葉</span>
+              <h3 className="heading-md">
+                ラベルの向こう側で見つけたもの
+              </h3>
+              <p className="text-secondary">
+                診断名を告げられた日から、私の人生は大きく変わりました。
+                しかし、それは終わりではなく、新しい始まりでした...
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-12 bg-stone-900 text-stone-50">
+        <div className="container-custom">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+              <h4 className="font-serif text-xl mb-4">ME≠LABEL</h4>
+              <p className="text-stone-400 text-sm">
+                わたしは病名じゃない。<br />
+                医療の外縁やその先にある生のまなざしをテーマに、
+                当事者、医療者、表現者の声を交差させるメディア。
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium mb-4">メニュー</h4>
+              <ul className="space-y-2 text-stone-400">
+                <li><a href="/about" className="hover:text-stone-50 transition-colors">ABOUT</a></li>
+                <li><a href="/journal" className="hover:text-stone-50 transition-colors">JOURNAL</a></li>
+                <li><a href="/philosophy" className="hover:text-stone-50 transition-colors">PHILOSOPHY</a></li>
+                <li><a href="/voices" className="hover:text-stone-50 transition-colors">VOICES</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-4">SNS</h4>
+              <ul className="space-y-2 text-stone-400">
+                <li><a href="#" className="hover:text-stone-50 transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-stone-50 transition-colors">Instagram</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-medium mb-4">お問い合わせ</h4>
+              <a href="/contact" className="text-stone-400 hover:text-stone-50 transition-colors">
+                取材・掲載のご相談
+              </a>
+            </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-stone-800 text-center text-stone-400 text-sm">
+            © 2024 ME≠LABEL All rights reserved.
+          </div>
+        </div>
       </footer>
-    </div>
-  );
+    </main>
+  )
 }
