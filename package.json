@@ -6,12 +6,27 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "bot": "tsx src/bot/index.ts",
+    "bot:dev": "tsx watch src/bot/index.ts",
+    "bot:debug": "tsx src/bot/index.ts --debug",
+    "bot:test": "tsx src/bot/test-bot.ts",
+    "bot:production": "tsx src/bot/index.ts"
   },
   "dependencies": {
+    "axios": "^1.10.0",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.5.0",
+    "googleapis": "^150.0.1",
+    "microcms-js-sdk": "^3.2.0",
     "next": "^14.1.0",
+    "openai": "^5.3.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
+    "twitter-api-v2": "^1.23.2"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
@@ -24,6 +39,7 @@
     "postcss": "^8.4.31",
     "postcss-import": "^16.1.0",
     "tailwindcss": "^3.3.0",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }
