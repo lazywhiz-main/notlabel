@@ -11,12 +11,11 @@ export class GoogleSheetsService {
     spreadsheetId: string
   ) {
     // Google認証設定
-    const auth = new google.auth.JWT(
-      serviceAccountEmail,
-      undefined,
-      privateKey.replace(/\\n/g, '\n'),
-      ['https://www.googleapis.com/auth/spreadsheets']
-    );
+    const auth = new google.auth.JWT({
+      email: serviceAccountEmail,
+      key: privateKey.replace(/\\n/g, '\n'),
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
 
     this.sheets = google.sheets({ version: 'v4', auth });
     this.spreadsheetId = spreadsheetId;
