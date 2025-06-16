@@ -46,6 +46,8 @@ jobs:
         echo "TWITTER_ACCESS_TOKEN_SECRET=${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}" >> $GITHUB_ENV
         echo "SITE_URL=${{ secrets.SITE_URL }}" >> $GITHUB_ENV
         echo "WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}" >> $GITHUB_ENV
+        # スコア閾値（デフォルト: 4.5）
+        echo "SCORE_THRESHOLD=${{ secrets.SCORE_THRESHOLD }}" >> $GITHUB_ENV
         
     - name: Run research bot
       run: |

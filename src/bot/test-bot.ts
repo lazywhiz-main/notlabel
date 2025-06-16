@@ -115,19 +115,20 @@ async function testBot() {
     // 評価統計を出力
     processor.printStatistics(evaluatedPapers)
     
-    // 高スコア論文を選別
+    // 一定得点以上の論文を選別（テスト用は閾値3.0）
+    const scoreThreshold = parseFloat(process.env.SCORE_THRESHOLD || '3.0')
     const publishablePapers = evaluatedPapers.filter(
-      paper => paper.evaluation.score >= 3.0 && paper.evaluation.shouldPublish
+      paper => paper.evaluation.score >= scoreThreshold && paper.evaluation.shouldPublish
     )
     
-    console.log(`\n✨ 配信対象: ${publishablePapers.length}件の論文`)
+    console.log(`\n✨ 配信対象 (スコア≥${scoreThreshold}): ${publishablePapers.length}件の論文`)
     
-    // 上位2件を記事化（テスト用に制限）
-    const topPapers = publishablePapers
+    // 全ての対象論文を記事化（テスト用に上位2件に制限）
+    const targetPapers = publishablePapers
       .sort((a, b) => b.evaluation.score - a.evaluation.score)
-      .slice(0, 2)
+      .slice(0, 2)  // テスト用制限
     
-    for (const paper of topPapers) {
+    for (const paper of targetPapers) {
       console.log(`📝 記事生成中: ${paper.evaluation.title_simplified}`)
       await processor.generateAndPublish(paper)
     }

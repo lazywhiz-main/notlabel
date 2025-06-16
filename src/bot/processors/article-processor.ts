@@ -118,23 +118,24 @@ export class ArticleProcessor {
     const total = evaluatedPapers.length
     const publishable = evaluatedPapers.filter(p => p.evaluation.shouldPublish).length
     const highScore = evaluatedPapers.filter(p => p.evaluation.score >= 4.0).length
+    const excellentScore = evaluatedPapers.filter(p => p.evaluation.score >= 4.5).length
     const averageScore = evaluatedPapers.reduce((sum, p) => sum + p.evaluation.score, 0) / total
     
     console.log('\n📊 評価統計:')
     console.log(`  総論文数: ${total}`)
     console.log(`  投稿可能: ${publishable} (${((publishable / total) * 100).toFixed(1)}%)`)
     console.log(`  高スコア (≥4.0): ${highScore} (${((highScore / total) * 100).toFixed(1)}%)`)
+    console.log(`  厳選論文 (≥4.5): ${excellentScore} (${((excellentScore / total) * 100).toFixed(1)}%)`)
     console.log(`  平均スコア: ${averageScore.toFixed(2)}`)
     
-    // トップ論文を表示
-    const topPapers = evaluatedPapers
+    // 高スコア論文を表示
+    const qualifiedPapers = evaluatedPapers
       .filter(p => p.evaluation.shouldPublish)
       .sort((a, b) => b.evaluation.score - a.evaluation.score)
-      .slice(0, 3)
     
-    if (topPapers.length > 0) {
-      console.log('\n🏆 トップ論文:')
-      topPapers.forEach((paper, index) => {
+    if (qualifiedPapers.length > 0) {
+      console.log('\n🏆 投稿対象論文:')
+      qualifiedPapers.forEach((paper, index) => {
         console.log(`  ${index + 1}. [${paper.evaluation.score}] ${paper.evaluation.title_simplified}`)
       })
     }

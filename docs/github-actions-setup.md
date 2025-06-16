@@ -40,6 +40,16 @@ TWITTER_ACCESS_TOKEN_SECRET=your-access-token-secret
 SITE_URL=https://your-site.com
 ```
 
+#### ⚙️ Bot設定 (オプション)
+```
+SCORE_THRESHOLD=4.5
+```
+**説明**: 記事投稿の最低スコア閾値
+- デフォルト: 4.5（厳格な品質基準）
+- 推奨範囲: 4.0-5.0
+- 低く設定 → より多くの記事が投稿
+- 高く設定 → より厳選された記事のみ投稿
+
 #### 📊 Google Sheets Webhook (オプション)
 ```
 WEBHOOK_URL=https://script.google.com/macros/s/your-webhook-id/exec
@@ -172,6 +182,18 @@ schedule:
 ```
 
 ### 処理内容の変更
+
+#### スコア閾値の調整
+
+GitHub Secrets で `SCORE_THRESHOLD` を設定：
+
+```
+SCORE_THRESHOLD=4.0  # より多くの記事を投稿
+SCORE_THRESHOLD=4.5  # デフォルト（厳格な品質基準）
+SCORE_THRESHOLD=5.0  # 最高品質のみ投稿
+```
+
+#### その他のカスタマイズ
 
 `src/bot/index.ts` を編集して処理ロジックを調整
 

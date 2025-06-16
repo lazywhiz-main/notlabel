@@ -128,21 +128,21 @@ async function main() {
     // 評価統計を出力
     processor.printStatistics(evaluatedPapers)
     
-    // 3. 高スコア論文を選別（score >= 4.0 かつ shouldPublish === true）
+    // 3. 一定得点以上の論文を選別（環境変数で閾値設定可能、デフォルト4.5）
+    const scoreThreshold = parseFloat(process.env.SCORE_THRESHOLD || '4.5')
     const publishablePapers = evaluatedPapers.filter(
-      paper => paper.evaluation.score >= 4.0 && paper.evaluation.shouldPublish
+      paper => paper.evaluation.score >= scoreThreshold && paper.evaluation.shouldPublish
     )
     
-    console.log(`\n✨ 配信対象: ${publishablePapers.length}件の論文`)
+    console.log(`\n✨ 配信対象 (スコア≥${scoreThreshold}): ${publishablePapers.length}件の論文`)
     
-    // 4. 上位3件を記事化してmicroCMSに投稿
-    const topPapers = publishablePapers
+    // 4. 全ての対象論文を記事化してmicroCMSに投稿（スコア順にソート）
+    const targetPapers = publishablePapers
       .sort((a, b) => b.evaluation.score - a.evaluation.score)
-      .slice(0, 3)
     
     const publishedArticles: any[] = []
     
-    for (const paper of topPapers) {
+    for (const paper of targetPapers) {
       console.log(`📝 記事生成中: ${paper.evaluation.title_simplified}`)
       const articleData = await processor.generateAndPublish(paper)
       
