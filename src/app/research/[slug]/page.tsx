@@ -106,7 +106,7 @@ export default async function ArticlePage({ params }: PageProps) {
             <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 mb-6">
               <span className="bg-stone-100 px-2 py-1 rounded">{article.research_type || '研究'}</span>
               <span>{article.journal || 'Journal'}</span>
-              <span>{article.publish_date ? new Date(article.publish_date).toLocaleDateString('ja-JP') : '日付不明'}</span>
+              <span>{article.publish_date ? new Date(article.publish_date).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '日付不明'}</span>
               <span className="font-mono">{article.pubmed_id || 'PMID: 不明'}</span>
             </div>
           </div>
@@ -216,7 +216,8 @@ export default async function ArticlePage({ params }: PageProps) {
                 month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                timeZone: 'Asia/Tokyo'
               }) : '不明な日時'} にAIによって生成されました。
             </p>
           </div>

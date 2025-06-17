@@ -186,8 +186,12 @@ export function selectOptimalTemplate(article: ResearchArticle): TweetTemplate {
     return TWEET_TEMPLATES.find(t => t.name === 'basic-research') || TWEET_TEMPLATES[0];
   }
 
-  // 時間帯に基づく選択
-  const hour = new Date().getHours();
+  // 時間帯に基づく選択（日本時間）
+  const hour = parseInt(new Date().toLocaleString('ja-JP', { 
+    timeZone: 'Asia/Tokyo', 
+    hour: 'numeric', 
+    hour12: false 
+  }));
   if (hour >= 6 && hour <= 10) {
     return TWEET_TEMPLATES.find(t => t.name === 'morning') || TWEET_TEMPLATES[0];
   }

@@ -91,7 +91,7 @@ function setupHeaders(sheet) {
  */
 function addDataToSheet(sheet, data) {
   var newRow = [
-    data.timestamp || Utilities.formatDate(new Date(), 'JST', 'yyyy/MM/dd HH:mm'),
+    data.timestamp || Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm'),
     data.title || '',
     data.tweetText || '',
     data.articleUrl || '',

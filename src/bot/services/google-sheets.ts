@@ -28,8 +28,8 @@ export class GoogleSheetsService {
     try {
       const now = new Date();
       const timestamp = now.toISOString();
-      const formattedDate = now.toLocaleDateString('ja-JP');
-      const formattedTime = now.toLocaleTimeString('ja-JP');
+      const formattedDate = now.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' });
+      const formattedTime = now.toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo' });
 
       // 投稿データの行を作成
       const values = [
