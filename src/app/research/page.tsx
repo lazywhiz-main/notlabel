@@ -30,7 +30,7 @@ export default async function Research() {
   try {
     // microCMSから記事データを取得
     console.log('🔍 microCMSからデータを取得中...')
-    articlesData = await getResearchArticles(20)
+    articlesData = await getResearchArticles(100)
     articles = articlesData.contents
     console.log(`✅ ${articles.length}件の記事を取得`)
   } catch (err) {

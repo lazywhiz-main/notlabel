@@ -9,7 +9,6 @@ const menuItems = [
   { href: '/about', label: 'ABOUT' },
   { href: '/journal', label: 'JOURNAL' },
   { href: '/philosophy', label: 'PHILOSOPHY' },
-  { href: '/voices', label: 'VOICES' },
   { href: '/research', label: 'RESEARCH' },
   { href: '/contact', label: 'CONTACT' },
 ]

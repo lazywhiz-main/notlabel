@@ -38,9 +38,9 @@ export default function About() {
 
             <h2>編集部について</h2>
             <p>
-              ME≠LABELは、医療者、当事者、研究者、アーティストなど、
-              様々な立場の人々によって運営されています。
-              それぞれの経験や専門性を活かしながら、
+              ME≠LABELは、医療・ビジネス・デザインなど、
+              様々な分野の専門性を持つメンバーによって運営されています。
+              医療の現場経験、ビジネス開発の知見、UXデザインの視点を組み合わせることで、
               医療と社会の接点に新しい対話の場を作ることを目指しています。
             </p>
 
@@ -57,16 +57,25 @@ export default function About() {
         <div className="container-custom">
           <h2 className="heading-lg mb-12">編集チーム</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Team Member Card */}
+            {/* Team Member Card - メンバーA */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div className="aspect-square bg-stone-200 rounded-full w-32 mx-auto mb-6" />
-              <h3 className="heading-md text-center mb-2">編集長</h3>
+              <h3 className="heading-md text-center mb-2">メンバーA</h3>
               <p className="text-secondary text-center">
-                医療の現場で10年以上の経験を持つ医師。
-                患者との対話を通じて、医療の可能性と限界を考え続けている。
+                医療機器メーカー、製薬会社、医療ベンチャーでの事業開発経験を持つ。
+                医療を「外側」から捉える視点で、新しい価値創造に取り組んでいる。
               </p>
             </div>
-            {/* Add more team member cards as needed */}
+            
+            {/* Team Member Card - メンバーB */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="aspect-square bg-stone-200 rounded-full w-32 mx-auto mb-6" />
+              <h3 className="heading-md text-center mb-2">メンバーB</h3>
+              <p className="text-secondary text-center">
+                デザイナーとして医療分野でのUXリサーチに豊富な経験を持つ。
+                人間中心設計の視点から、医療における新しい体験を創造している。
+              </p>
+            </div>
           </div>
         </div>
       </section>
