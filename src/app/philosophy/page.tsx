@@ -18,10 +18,7 @@ export default async function Philosophy() {
   try {
     const response = await getPhilosophyArticles(9)
     essays = response.contents
-    // デバッグ: 記事のslugを確認
-    if (essays.length > 0) {
-      console.log('🔍 Philosophy記事のslug確認:', essays.map(a => ({ id: a.id, slug: a.slug, title: a.title })))
-    }
+
   } catch (err) {
     console.error('❌ Philosophy記事取得エラー:', err)
     error = err instanceof Error ? err.message : 'データ取得に失敗しました'
@@ -78,7 +75,7 @@ export default async function Philosophy() {
               </div>
             ) : (
               essays.map((essay) => (
-                <Link key={essay.id} href={`/philosophy/${essay.slug}`}>
+                <Link key={essay.id} href={`/philosophy/${essay.slug === '1234' ? essay.id : essay.slug}`}>
                   <article className="bg-white p-8 rounded-lg shadow-sm group cursor-pointer">
                     <div className="space-y-4">
                       <div className="flex items-center gap-4 text-sm text-stone-400">

@@ -153,10 +153,7 @@ export async function getContentArticles(
       queries,
     })
     
-    // デバッグ: レスポンスデータの構造を確認
-    if (response.contents.length > 0) {
-      console.log('🔍 microCMSレスポンス詳細:', JSON.stringify(response.contents[0], null, 2))
-    }
+
     
     return response
   } catch (error) {
@@ -249,12 +246,23 @@ export async function getArticleBySlug(endpoint: 'articles' | 'journals', slug: 
 // コンテンツ記事をスラッグで取得
 export async function getContentBySlug(slug: string): Promise<ContentArticle | null> {
   try {
-    const response = await client.get({
+    // まずslugで検索を試行
+    let response = await client.get({
       endpoint: 'contents',
       queries: {
         filters: `slug[equals]${slug}`,
       },
     })
+    
+    // slugで見つからない場合はIDで検索（一時的対応）
+    if (!response.contents[0]) {
+      response = await client.get({
+        endpoint: 'contents',
+        queries: {
+          filters: `id[equals]${slug}`,
+        },
+      })
+    }
     
     return response.contents[0] || null
   } catch (error) {
