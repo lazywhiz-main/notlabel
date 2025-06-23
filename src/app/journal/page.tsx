@@ -50,6 +50,10 @@ export default async function Journal() {
   try {
     const response = await getJournalArticles(12)
     articles = response.contents
+    // デバッグ: 記事のslugを確認
+    if (articles.length > 0) {
+      console.log('🔍 Journal記事のslug確認:', articles.map(a => ({ id: a.id, slug: a.slug, title: a.title })))
+    }
   } catch (err) {
     console.error('❌ Journal記事取得エラー:', err)
     error = err instanceof Error ? err.message : 'データ取得に失敗しました'

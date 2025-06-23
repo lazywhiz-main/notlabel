@@ -153,6 +153,11 @@ export async function getContentArticles(
       queries,
     })
     
+    // デバッグ: レスポンスデータの構造を確認
+    if (response.contents.length > 0) {
+      console.log('🔍 microCMSレスポンス詳細:', JSON.stringify(response.contents[0], null, 2))
+    }
+    
     return response
   } catch (error) {
     console.error('Failed to fetch content articles:', error)

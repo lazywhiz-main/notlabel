@@ -18,6 +18,10 @@ export default async function Philosophy() {
   try {
     const response = await getPhilosophyArticles(9)
     essays = response.contents
+    // デバッグ: 記事のslugを確認
+    if (essays.length > 0) {
+      console.log('🔍 Philosophy記事のslug確認:', essays.map(a => ({ id: a.id, slug: a.slug, title: a.title })))
+    }
   } catch (err) {
     console.error('❌ Philosophy記事取得エラー:', err)
     error = err instanceof Error ? err.message : 'データ取得に失敗しました'
