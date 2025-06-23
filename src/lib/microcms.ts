@@ -30,7 +30,7 @@ export interface ContentArticle {
   excerpt: string
   content: string
   author: string
-  category: 'philosophy' | 'journal' | 'voices'
+  category: ('philosophy' | 'journal' | 'voices')[]
   tags: string[]
   published_at: string
   slug: string
@@ -113,7 +113,6 @@ export const client = createClient({
 // TODO: 記事数が100件を超えたらページネーション実装を検討
 export async function getResearchArticles(limit = 10, offset = 0) {
   try {
-    console.log('📡 microCMS API 呼び出し:', { limit, offset })
     const response = await client.get({
       endpoint: 'articles',
       queries: {
@@ -124,7 +123,6 @@ export async function getResearchArticles(limit = 10, offset = 0) {
       },
     })
     
-    console.log('📊 API レスポンス:', { totalCount: response.totalCount, contents: response.contents.length })
     return response
   } catch (error) {
     console.error('Failed to fetch research articles:', error)
@@ -146,7 +144,8 @@ export async function getContentArticles(
     }
 
     if (category) {
-      queries.filters = `category[equals]${category}`
+      // 複数選択フィールド用のフィルター
+      queries.filters = `category[contains]${category}`
     }
 
     const response = await client.get({
@@ -201,9 +200,9 @@ export async function getAllContent(limit = 6) {
     const response = await getContentArticles(undefined, limit * 3, 0)
     
     // カテゴリ別に分類
-    const philosophy = response.contents.filter((item: ContentArticle) => item.category === 'philosophy')
-    const journal = response.contents.filter((item: ContentArticle) => item.category === 'journal')
-    const voices = response.contents.filter((item: ContentArticle) => item.category === 'voices')
+    const philosophy = response.contents.filter((item: ContentArticle) => item.category.includes('philosophy'))
+    const journal = response.contents.filter((item: ContentArticle) => item.category.includes('journal'))
+    const voices = response.contents.filter((item: ContentArticle) => item.category.includes('voices'))
 
     // 各カテゴリから最新のものを取得
     const allContent = [

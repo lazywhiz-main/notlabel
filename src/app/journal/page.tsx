@@ -1,41 +1,59 @@
 import Navigation from '@/components/Navigation'
+import { getJournalArticles, type ContentArticle } from '@/lib/microcms'
+import Link from 'next/link'
 
 const categories = [
   { id: 'all', label: 'すべて' },
-  { id: 'series', label: '連載' },
-  { id: 'interview', label: 'インタビュー' },
-  { id: 'column', label: 'コラム' },
+  { id: 'analysis', label: '分析' },
+  { id: 'experience', label: '体験談' },
+  { id: 'dialogue', label: '対話' },
+  { id: 'observation', label: '観察' },
 ]
 
-const articles = [
-  {
-    id: 1,
-    title: '医療の境界線を超えて：ある精神科医の問い',
-    excerpt: '診断名は、時として人を理解する助けとなり、時として壁となる。30年の臨床経験から見えてきた、医療の可能性と限界について。',
-    category: 'interview',
-    image: '/placeholder.jpg',
-    date: '2024.03.21',
-  },
-  {
-    id: 2,
-    title: '「普通」という幻想：社会が作るラベルの正体',
-    excerpt: '私たちは知らず知らずのうちに、「普通」という基準で人を判断していないだろうか。その無意識の排除の構造を考える。',
-    category: 'series',
-    image: '/placeholder.jpg',
-    date: '2024.03.18',
-  },
-  {
-    id: 3,
-    title: '病いとともに、それでも前を向いて',
-    excerpt: '慢性疾患と共に生きる中で見つけた、新しい生き方のヒント。医療の枠を超えた、もうひとつの物語。',
-    category: 'column',
-    image: '/placeholder.jpg',
-    date: '2024.03.15',
-  },
-  // Add more articles as needed
-]
+// 日付フォーマット関数
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit', 
+    day: '2-digit'
+  }).replace(/\//g, '.')
+}
 
-export default function Journal() {
+// タグからコンテンツタイプを取得
+const getContentType = (tags: string[]) => {
+  const typeMap = {
+    '分析': 'analysis',
+    '体験談': 'experience', 
+    '対話': 'dialogue',
+    '観察': 'observation'
+  }
+  
+  for (const tag of tags) {
+    if (typeMap[tag as keyof typeof typeMap]) {
+      return typeMap[tag as keyof typeof typeMap]
+    }
+  }
+  return 'analysis' // デフォルト
+}
+
+// コンテンツタイプのラベルを取得
+const getTypeLabel = (tags: string[]) => {
+  const typeTags = ['分析', '体験談', '対話', '観察']
+  const typeTag = tags.find(tag => typeTags.includes(tag))
+  return typeTag || '分析'
+}
+
+export default async function Journal() {
+  let articles: ContentArticle[] = []
+  let error: string | null = null
+
+  try {
+    const response = await getJournalArticles(12)
+    articles = response.contents
+  } catch (err) {
+    console.error('❌ Journal記事取得エラー:', err)
+    error = err instanceof Error ? err.message : 'データ取得に失敗しました'
+  }
   return (
     <main className="min-h-screen pt-16">
       <Navigation />
@@ -64,27 +82,44 @@ export default function Journal() {
             ))}
           </div>
 
+          {/* エラー表示 */}
+          {error && (
+            <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded mb-8">
+              <strong>データ取得エラー:</strong> {error}
+            </div>
+          )}
+
           {/* Articles Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {articles.map((article) => (
-              <article key={article.id} className="group">
-                <div className="aspect-[16/9] bg-stone-200 mb-4" />
-                <div className="space-y-2">
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs text-accent">
-                      {categories.find(c => c.id === article.category)?.label}
-                    </span>
-                    <span className="text-xs text-stone-400">{article.date}</span>
-                  </div>
-                  <h3 className="heading-md group-hover:text-accent transition-colors">
-                    {article.title}
-                  </h3>
-                  <p className="text-secondary">
-                    {article.excerpt}
-                  </p>
-                </div>
-              </article>
-            ))}
+            {articles.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-secondary">記事がまだありません。</p>
+              </div>
+            ) : (
+              articles.map((article) => (
+                <Link key={article.id} href={`/journal/${article.slug}`}>
+                  <article className="group cursor-pointer">
+                    <div className="aspect-[16/9] bg-stone-200 mb-4" />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs text-accent">
+                          {getTypeLabel(article.tags)}
+                        </span>
+                        <span className="text-xs text-stone-400">
+                          {formatDate(article.published_at)}
+                        </span>
+                      </div>
+                      <h3 className="heading-md group-hover:text-accent transition-colors">
+                        {article.title}
+                      </h3>
+                      <p className="text-secondary">
+                        {article.excerpt}
+                      </p>
+                    </div>
+                  </article>
+                </Link>
+              ))
+            )}
           </div>
 
           {/* Load More Button */}

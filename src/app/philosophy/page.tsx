@@ -1,30 +1,27 @@
 import Navigation from '@/components/Navigation'
+import { getPhilosophyArticles, type ContentArticle } from '@/lib/microcms'
+import Link from 'next/link'
 
-const essays = [
-  {
-    id: 1,
-    title: 'わたしたちは、なぜ"医療の外"を語るのか',
-    excerpt: '医療は人を救うためのシステムであり、同時に人を分類し、ラベリングするシステムでもある。その二重性の中で、私たちは何を見出すことができるのか。',
-    author: '編集部',
-    date: '2024.03.21',
-  },
-  {
-    id: 2,
-    title: '"健康"という言葉が持つ暴力性',
-    excerpt: '「健康であること」は、しばしば道徳的な価値として語られる。しかし、その価値観は本当に普遍的なものなのだろうか。',
-    author: '編集部',
-    date: '2024.03.18',
-  },
-  {
-    id: 3,
-    title: '治すことは救うことか？',
-    excerpt: '医療の究極の目的は「治療」なのか。それとも、別の可能性があるのか。医療の本質的な意味を問い直す。',
-    author: '編集部',
-    date: '2024.03.15',
-  },
-]
+// 日付フォーマット関数
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit', 
+    day: '2-digit'
+  }).replace(/\//g, '.')
+}
 
-export default function Philosophy() {
+export default async function Philosophy() {
+  let essays: ContentArticle[] = []
+  let error: string | null = null
+
+  try {
+    const response = await getPhilosophyArticles(9)
+    essays = response.contents
+  } catch (err) {
+    console.error('❌ Philosophy記事取得エラー:', err)
+    error = err instanceof Error ? err.message : 'データ取得に失敗しました'
+  }
   return (
     <main className="min-h-screen pt-16">
       <Navigation />
@@ -62,28 +59,44 @@ export default function Philosophy() {
       <section className="py-24 bg-stone-100">
         <div className="container-custom">
           <h2 className="heading-lg mb-12">哲学的エッセイ</h2>
+          
+          {/* エラー表示 */}
+          {error && (
+            <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded mb-8">
+              <strong>データ取得エラー:</strong> {error}
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {essays.map((essay) => (
-              <article key={essay.id} className="bg-white p-8 rounded-lg shadow-sm group">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 text-sm text-stone-400">
-                    <span>{essay.author}</span>
-                    <span>{essay.date}</span>
-                  </div>
-                  <h3 className="heading-md group-hover:text-accent transition-colors">
-                    {essay.title}
-                  </h3>
-                  <p className="text-secondary">
-                    {essay.excerpt}
-                  </p>
-                  <div className="pt-4">
-                    <button className="text-accent hover:underline">
-                      続きを読む →
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+            {essays.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-secondary">記事がまだありません。</p>
+              </div>
+            ) : (
+              essays.map((essay) => (
+                <Link key={essay.id} href={`/philosophy/${essay.slug}`}>
+                  <article className="bg-white p-8 rounded-lg shadow-sm group cursor-pointer">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4 text-sm text-stone-400">
+                        <span>{essay.author}</span>
+                        <span>{formatDate(essay.published_at)}</span>
+                      </div>
+                      <h3 className="heading-md group-hover:text-accent transition-colors">
+                        {essay.title}
+                      </h3>
+                      <p className="text-secondary">
+                        {essay.excerpt}
+                      </p>
+                      <div className="pt-4">
+                        <span className="text-accent hover:underline">
+                          続きを読む →
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
