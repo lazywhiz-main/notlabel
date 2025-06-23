@@ -1,5 +1,9 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Navigation from '@/components/Navigation'
-import { getResearchArticles, type ResearchArticle } from '@/lib/microcms'
+import ResearchFilters, { type FilterOptions } from '@/components/ResearchFilters'
+import { getResearchArticlesClient, type ResearchArticleClient } from '@/lib/microcms-client'
 import Link from 'next/link'
 
 const getDifficultyColor = (difficulty: string[] | string) => {
@@ -22,20 +26,123 @@ const getDifficultyLabel = (difficulty: string[] | string) => {
   }
 }
 
-export default async function Research() {
-  let articles: ResearchArticle[] = []
-  let articlesData: any = { contents: [], totalCount: 0 }
-  let error: string | null = null
+// フィルタリング関数
+const filterArticles = (articles: ResearchArticleClient[], filters: FilterOptions): ResearchArticleClient[] => {
+  return articles.filter(article => {
+    // 検索テキストでのフィルタリング
+    if (filters.searchTerm) {
+      const searchTerm = filters.searchTerm.toLowerCase()
+      const titleMatch = article.title.toLowerCase().includes(searchTerm)
+      const summaryMatch = article.summary.toLowerCase().includes(searchTerm)
+      const tagsMatch = article.tags?.toLowerCase().includes(searchTerm)
+      if (!titleMatch && !summaryMatch && !tagsMatch) return false
+    }
 
-  try {
-    // microCMSから記事データを取得
-    console.log('🔍 microCMSからデータを取得中...')
-    articlesData = await getResearchArticles(100)
-    articles = articlesData.contents
-    console.log(`✅ ${articles.length}件の記事を取得`)
-  } catch (err) {
-    console.error('❌ データ取得エラー:', err)
-    error = err instanceof Error ? err.message : 'データ取得に失敗しました'
+    // がん種フィルタ
+    if (filters.cancer_types.length > 0) {
+      const articleCancerTypes = article.cancer_types || []
+      const hasMatch = filters.cancer_types.some(filter => 
+        articleCancerTypes.some(type => type.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
+    // 治療成果フィルタ
+    if (filters.treatment_outcomes.length > 0) {
+      const articleOutcomes = article.treatment_outcomes || []
+      const hasMatch = filters.treatment_outcomes.some(filter => 
+        articleOutcomes.some(outcome => outcome.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
+    // 研究段階フィルタ
+    if (filters.research_stage.length > 0) {
+      const articleStages = Array.isArray(article.research_stage) ? article.research_stage : []
+      const hasMatch = filters.research_stage.some(filter => 
+        articleStages.some((stage: string) => stage.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
+    // 日本での利用可能性フィルタ
+    if (filters.japan_availability.length > 0) {
+      const articleAvailabilities = Array.isArray(article.japan_availability) ? article.japan_availability : []
+      const hasMatch = filters.japan_availability.some(filter => 
+        articleAvailabilities.some((availability: string) => availability.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
+    // がん腫特異性フィルタ
+    if (filters.cancer_specificity.length > 0) {
+      const articleSpecificities = Array.isArray(article.cancer_specificity) ? article.cancer_specificity : []
+      const hasMatch = filters.cancer_specificity.some(filter => 
+        articleSpecificities.some((specificity: string) => specificity.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
+    // 難易度フィルタ
+    if (filters.difficulty.length > 0) {
+      const articleDifficulties = Array.isArray(article.difficulty) ? article.difficulty : []
+      const hasMatch = filters.difficulty.some(filter => 
+        articleDifficulties.some((difficulty: string) => difficulty.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
+    return true
+  })
+}
+
+export default function Research() {
+  const [allArticles, setAllArticles] = useState<ResearchArticleClient[]>([])
+  const [filteredArticles, setFilteredArticles] = useState<ResearchArticleClient[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 初期データ取得
+  useEffect(() => {
+    async function fetchArticles() {
+      try {
+        console.log('🔍 microCMSからデータを取得中...')
+        // API Route経由でデータを取得
+        const data = await getResearchArticlesClient(100)
+        const articles = data.contents
+        console.log(`✅ ${articles.length}件の記事を取得`)
+        
+        setAllArticles(articles)
+        setFilteredArticles(articles)
+      } catch (err) {
+        console.error('❌ データ取得エラー:', err)
+        setError(err instanceof Error ? err.message : 'データ取得に失敗しました')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchArticles()
+  }, [])
+
+  // フィルタ変更時の処理
+  const handleFilterChange = (filters: FilterOptions) => {
+    const filtered = filterArticles(allArticles, filters)
+    setFilteredArticles(filtered)
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen pt-16">
+        <Navigation />
+        <div className="container-custom py-24">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+            <p>記事を読み込み中...</p>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -58,8 +165,6 @@ export default async function Research() {
             <p className="body-lg text-secondary mb-6">
               PubMedから毎日収集されるがん関連の最新論文を、AI技術により患者・当事者目線でわかりやすく要約しています。
             </p>
-            
-
             
             <div className="bg-stone-50 border border-stone-200 rounded-lg p-6">
               <div className="flex items-start gap-3">
@@ -94,12 +199,12 @@ export default async function Research() {
         <div className="container-custom">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1">{articles.length}</div>
-              <div className="text-sm text-secondary">今月の要約記事</div>
+              <div className="text-2xl font-bold text-accent mb-1">{filteredArticles.length}</div>
+              <div className="text-sm text-secondary">表示中の記事</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1">{articlesData.totalCount}</div>
-              <div className="text-sm text-secondary">累計論文数</div>
+              <div className="text-2xl font-bold text-accent mb-1">{allArticles.length}</div>
+              <div className="text-sm text-secondary">総記事数</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-accent mb-1">15</div>
@@ -113,27 +218,35 @@ export default async function Research() {
         </div>
       </section>
 
-      {/* Latest AI Articles */}
+      {/* Main Content */}
       <section className="py-24">
         <div className="container-custom">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="heading-lg">最新のAI要約記事</h2>
+            <h2 className="heading-lg">AI要約記事</h2>
             <div className="flex items-center gap-2 text-sm text-secondary">
               <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
               <span>自動更新中</span>
             </div>
           </div>
 
-          {articles.length === 0 ? (
+          {/* フィルタリングコンポーネント */}
+          <ResearchFilters 
+            onFilterChange={handleFilterChange}
+            articlesCount={filteredArticles.length}
+          />
+
+          {filteredArticles.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-secondary">記事がまだありません。</p>
-              <p className="text-sm text-stone-400 mt-2">
-                Bot実行後、記事が表示されます。
+              <p className="text-secondary">
+                {allArticles.length === 0 
+                  ? '記事がまだありません。Bot実行後、記事が表示されます。'
+                  : '選択した条件に一致する記事が見つかりませんでした。フィルタを調整してください。'
+                }
               </p>
             </div>
           ) : (
             <div className="space-y-8">
-              {articles.map((article) => (
+              {filteredArticles.map((article) => (
                 <article key={article.id} className="border border-stone-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                   {/* AI生成バッジ */}
                   <div className="bg-accent text-white px-6 py-3">
@@ -163,12 +276,37 @@ export default async function Research() {
 
                   {/* Article Content */}
                   <div className="p-6">
+                    {/* メタデータ表示 */}
                     <div className="mb-4">
                       <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 mb-2">
                         <span className="bg-stone-100 px-2 py-1 rounded">{article.research_type || '研究'}</span>
                         <span>{article.journal || 'Journal'}</span>
                         <span>{article.publish_date ? new Date(article.publish_date).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '日付不明'}</span>
                         <span className="font-mono">{article.pubmed_id || 'PMID: 不明'}</span>
+                      </div>
+                      
+                      {/* Phase 1 メタデータ */}
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {article.cancer_types?.map((type, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
+                            🎯 {type}
+                          </span>
+                        ))}
+                        {article.treatment_outcomes?.map((outcome, index) => (
+                          <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md">
+                            📈 {outcome}
+                          </span>
+                        ))}
+                        {article.research_stage && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-md">
+                            🔬 {article.research_stage}
+                          </span>
+                        )}
+                        {article.japan_availability && (
+                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-md">
+                            🏥 {article.japan_availability}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -195,84 +333,50 @@ export default async function Research() {
                         <div className="flex flex-wrap gap-2">
                           {article.tags.split(', ').map((tag, index) => (
                             <span key={index} className="px-2 py-1 bg-stone-100 text-xs rounded-md">
-                              {tag}
+                              #{tag}
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Link 
-                          href={`/research/${article.slug}`}
-                          className="text-accent hover:text-teal-800 text-sm font-medium transition-colors"
-                        >
-                          続きを読む →
-                        </Link>
+                    {/* 患者向けキーワード */}
+                    {article.patient_keywords && article.patient_keywords.length > 0 && (
+                      <div className="border-t border-stone-100 pt-4">
+                        <div className="text-xs text-stone-500 mb-2">患者・当事者向けキーワード：</div>
+                        <div className="flex flex-wrap gap-2">
+                          {article.patient_keywords.map((keyword, index) => (
+                            <span key={index} className="px-2 py-1 bg-accent/10 text-accent text-xs rounded-md">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-4 border-t border-stone-100">
+                      <Link 
+                        href={`/research/${article.slug}`}
+                        className="text-accent hover:underline text-sm font-medium"
+                      >
+                        記事を読む →
+                      </Link>
+                      {article.original_url && (
                         <a 
                           href={article.original_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-secondary hover:text-primary text-sm transition-colors"
+                          className="text-stone-500 hover:text-stone-700 text-xs"
                         >
-                          PubMedで確認
+                          原論文を見る ↗
                         </a>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-stone-400">
-                        <span>🔄 自動翻訳・要約</span>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </article>
               ))}
             </div>
           )}
-
-          {/* Load More */}
-          {articlesData.totalCount > articles.length && (
-            <div className="mt-12 text-center">
-              <button className="px-8 py-3 border border-stone-200 rounded-full hover:bg-stone-50 transition-colors">
-                過去の記事を見る（{articlesData.totalCount - articles.length}件）
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-24 bg-stone-100">
-        <div className="container-custom">
-          <h2 className="heading-lg mb-12 text-center">AI要約の仕組み</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-stone-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📚</span>
-              </div>
-              <h3 className="font-serif text-xl mb-3">1. 論文収集</h3>
-              <p className="text-secondary">
-                PubMed APIを通じて、がん関連の最新論文を毎日自動収集しています。
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🤖</span>
-              </div>
-              <h3 className="font-serif text-xl mb-3">2. AI要約</h3>
-              <p className="text-secondary">
-                専門用語を一般向けに翻訳し、患者・当事者の視点から重要なポイントを抽出します。
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-stone-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">✅</span>
-              </div>
-              <h3 className="font-serif text-xl mb-3">3. 品質確認</h3>
-              <p className="text-secondary">
-                編集部による内容確認を経て、読みやすい形で配信しています。
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 

@@ -10,7 +10,7 @@ export class PubMedService {
    * @param days 過去何日分を取得するか
    * @returns 論文配列
    */
-  async fetchCancerPapers(days: number = 3): Promise<PubMedPaper[]> {
+  async fetchCancerPapers(days: number = 14): Promise<PubMedPaper[]> {
     try {
       // 検索クエリの構築
       const endDate = new Date()
@@ -76,7 +76,7 @@ export class PubMedService {
       params: {
         db: 'pubmed',
         term: query,
-        retmax: 50, // 取得上限
+        retmax: 500, // 500件でテスト実行
         retmode: 'json',
         sort: 'relevance'
       }

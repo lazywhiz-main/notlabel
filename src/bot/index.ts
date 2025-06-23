@@ -116,9 +116,10 @@ async function main() {
     // 論文処理プロセッサーの初期化
     const processor = new ArticleProcessor(openaiService, microcmsService)
     
-    // 1. PubMedからがん関連論文を取得（過去3日分）
-    console.log('📚 PubMedから論文を取得中...')
-    const papers = await pubmedService.fetchCancerPapers(3)
+    // 1. PubMedから論文を取得
+    console.log('📄 PubMedからがん関連論文を取得中...')
+    
+    const papers = await pubmedService.fetchCancerPapers(14) // 14日間に拡張
     console.log(`📄 ${papers.length}件の論文を取得しました`)
     
     // 2. 各論文をGPTでスコアリング
@@ -129,7 +130,7 @@ async function main() {
     processor.printStatistics(evaluatedPapers)
     
     // 3. 一定得点以上の論文を選別（環境変数で閾値設定可能、デフォルト4.5）
-    const scoreThreshold = parseFloat(process.env.SCORE_THRESHOLD || '4.5')
+    const scoreThreshold = parseFloat(process.env.SCORE_THRESHOLD || '4.0') // テスト用に一時的に4.0に変更
     const publishablePapers = evaluatedPapers.filter(
       paper => paper.evaluation.score >= scoreThreshold && paper.evaluation.shouldPublish
     )

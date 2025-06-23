@@ -77,8 +77,7 @@ export class ArticleProcessor {
         original_url: paper.pubmedUrl,
         posted_at: new Date().toISOString(),
         slug: slug,
-        // 追加フィールド
-        difficulty: ['intermediate'],
+        // 既存フィールド
         research_type: 'cancer_research',
         original_title: paper.title,
         pubmed_id: paper.id,
@@ -86,7 +85,15 @@ export class ArticleProcessor {
         publish_date: paper.publishDate ? new Date(paper.publishDate).toISOString() : new Date().toISOString(),
         ai_generated_at: new Date().toISOString(),
         ai_generated: true,
-        read_time: '5分'
+        read_time: '5分',
+        // Phase 1新フィールド
+        cancer_types: evaluation.cancer_types,
+        treatment_outcomes: evaluation.treatment_outcomes,
+        research_stage: [evaluation.research_stage],  // 配列として送信
+        japan_availability: [evaluation.japan_availability],  // 配列として送信  
+        patient_keywords: evaluation.patient_keywords,
+        difficulty: [evaluation.difficulty_level],
+        cancer_specificity: [evaluation.cancer_specificity]
       }
       
       console.log('🔍 投稿データを確認:', JSON.stringify(articleData, null, 2))

@@ -34,6 +34,14 @@ export class MicroCMSService {
       console.log('  - read_time:', articleData.read_time)
       console.log('  - slug:', articleData.slug)
       
+      // Phase 1フィールドの詳細ログ
+      console.log('🔍 Phase 1フィールド送信値:')
+      console.log('  - cancer_types:', JSON.stringify(articleData.cancer_types))
+      console.log('  - treatment_outcomes:', JSON.stringify(articleData.treatment_outcomes))
+      console.log('  - research_stage:', JSON.stringify(articleData.research_stage))
+      console.log('  - japan_availability:', JSON.stringify(articleData.japan_availability))
+      console.log('  - patient_keywords:', JSON.stringify(articleData.patient_keywords))
+      
       const response = await axios.post(
         `${this.baseUrl}/articles`,
         articleData,
@@ -118,6 +126,20 @@ export class MicroCMSService {
       if (!articleData[field as keyof ArticleData]) {
         console.error(`❌ 必須フィールドが不足: ${field} = ${articleData[field as keyof ArticleData]}`)
         return false
+      }
+    }
+
+    // Phase 1新フィールドの存在確認（optionalなので警告のみ）
+    const phase1Fields = [
+      'cancer_types', 'treatment_outcomes', 'research_stage', 
+      'japan_availability', 'patient_keywords'
+    ]
+    
+    for (const field of phase1Fields) {
+      if (articleData[field as keyof ArticleData]) {
+        console.log(`✅ Phase 1フィールド設定済み: ${field}`)
+      } else {
+        console.log(`⚠️  Phase 1フィールドなし: ${field}`)
       }
     }
     
