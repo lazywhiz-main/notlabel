@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100) // microCMSの制限に合わせて100件まで
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // 環境変数チェック
@@ -36,7 +36,9 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       console.error('microCMS API エラー:', response.status, response.statusText)
-      throw new Error(`microCMS API request failed: ${response.status}`)
+      const errorText = await response.text()
+      console.error('エラー詳細:', errorText)
+      throw new Error(`microCMS API request failed: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()

@@ -117,14 +117,14 @@ export const client = createClient({
 
 // Research記事取得
 // TODO: 記事数が100件を超えたらページネーション実装を検討
-export async function getResearchArticles(limit = 10, offset = 0) {
+export async function getResearchArticles(limit = 100, offset = 0) {
   try {
     const response = await client.get({
       endpoint: 'articles',
       queries: {
         limit,
         offset,
-        orders: '-createdAt',
+        orders: '-published_at',
         filters: 'ai_generated[equals]true',
       },
     })
@@ -280,14 +280,25 @@ export async function getContentBySlug(slug: string): Promise<ContentArticle | n
 // Research記事をスラッグで取得
 export async function getResearchArticleBySlug(slug: string): Promise<ResearchArticle | null> {
   try {
-    const response = await client.get({
+    // まずslugで検索を試行
+    let response = await client.get({
       endpoint: 'articles',
       queries: {
-        filters: `slug[equals]${slug}`,
+        filters: `slug[equals]${slug}[and]ai_generated[equals]true`,
       },
     })
     
-    return response.contents[0] || null
+    // slugで見つからない場合はIDで検索（一時的対応）
+    if (!response.contents || response.contents.length === 0) {
+      response = await client.get({
+        endpoint: 'articles',
+        queries: {
+          filters: `id[equals]${slug}[and]ai_generated[equals]true`,
+        },
+      })
+    }
+    
+    return response.contents?.[0] || null
   } catch (error) {
     console.error('Failed to fetch research article by slug:', error)
     return null

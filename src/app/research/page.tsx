@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import ResearchFilters, { type FilterOptions } from '@/components/ResearchFilters'
 import { getResearchArticlesClient, type ResearchArticleClient } from '@/lib/microcms-client'
 import Link from 'next/link'
+
+
+const ARTICLES_PER_PAGE = 20 // 1ページあたりの記事数
 
 const getDifficultyColor = (difficulty: string[] | string) => {
   const level = Array.isArray(difficulty) ? difficulty[0] : difficulty
@@ -98,22 +101,33 @@ const filterArticles = (articles: ResearchArticleClient[], filters: FilterOption
 
 export default function Research() {
   const [allArticles, setAllArticles] = useState<ResearchArticleClient[]>([])
+  const [displayedArticles, setDisplayedArticles] = useState<ResearchArticleClient[]>([])
   const [filteredArticles, setFilteredArticles] = useState<ResearchArticleClient[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasNextPage, setHasNextPage] = useState(true)
 
-  // 初期データ取得
+  // 初期データ取得（全件取得してフィルタリング用）
   useEffect(() => {
-    async function fetchArticles() {
+    async function fetchAllArticles() {
       try {
         console.log('🔍 microCMSからデータを取得中...')
-        // API Route経由でデータを取得
-        const data = await getResearchArticlesClient(100)
+        // microCMSの制限により100件ずつ取得
+        const data = await getResearchArticlesClient(100) // microCMSの制限に合わせて100件
         const articles = data.contents
         console.log(`✅ ${articles.length}件の記事を取得`)
         
         setAllArticles(articles)
         setFilteredArticles(articles)
+        setTotalCount(data.totalCount)
+        
+        // 最初のページを表示
+        const firstPageArticles = articles.slice(0, ARTICLES_PER_PAGE)
+        setDisplayedArticles(firstPageArticles)
+        setHasNextPage(articles.length > ARTICLES_PER_PAGE)
       } catch (err) {
         console.error('❌ データ取得エラー:', err)
         setError(err instanceof Error ? err.message : 'データ取得に失敗しました')
@@ -122,14 +136,155 @@ export default function Research() {
       }
     }
 
-    fetchArticles()
+    fetchAllArticles()
   }, [])
 
+  // SEO用のStructured Data
+  useEffect(() => {
+    if (typeof window !== 'undefined' && allArticles.length > 0) {
+      const structuredData = {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "がん研究論文 AI要約記事一覧",
+        "description": "PubMedから収集されたがん関連の最新論文をAI技術により患者・当事者目線でわかりやすく要約した記事コレクション",
+        "url": window.location.href,
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": allArticles.length,
+          "itemListElement": allArticles.slice(0, 10).map((article, index) => ({
+            "@type": "Article",
+            "position": index + 1,
+            "name": article.title,
+            "description": article.summary,
+            "url": `${window.location.origin}/research/${article.slug}`,
+            "datePublished": article.published_at,
+            "dateModified": article.updatedAt,
+            "author": {
+              "@type": "Organization",
+              "name": "ME≠LABEL AI Research Bot"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "ME≠LABEL",
+              "logo": {
+                "@type": "ImageObject",
+                "url": `${window.location.origin}/logo.png`
+              }
+            }
+          }))
+        },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "ホーム",
+              "item": window.location.origin
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Research",
+              "item": window.location.href
+            }
+          ]
+        }
+      }
+
+      // 既存のstructured dataを削除
+      const existingScript = document.querySelector('script[type="application/ld+json"]')
+      if (existingScript) {
+        existingScript.remove()
+      }
+
+      // 新しいstructured dataを追加
+      const script = document.createElement('script')
+      script.type = 'application/ld+json'
+      script.textContent = JSON.stringify(structuredData)
+      document.head.appendChild(script)
+
+      // ページタイトルとメタデータを動的に設定
+      document.title = `がん研究AI要約 (${allArticles.length}件) - ME≠LABEL Research`
+      
+      // メタデータの設定
+      const metaDescription = document.querySelector('meta[name="description"]')
+      if (metaDescription) {
+        metaDescription.setAttribute('content', 
+          `PubMedから毎日収集される${allArticles.length}件のがん関連最新論文をAI技術により患者・当事者目線でわかりやすく要約。生存率向上、症状緩和、QOL向上に関する研究情報を提供。`
+        )
+      }
+
+      return () => {
+        // クリーンアップ
+        const script = document.querySelector('script[type="application/ld+json"]')
+        if (script) {
+          script.remove()
+        }
+      }
+    }
+  }, [allArticles])
+
   // フィルタ変更時の処理
-  const handleFilterChange = (filters: FilterOptions) => {
+  const handleFilterChange = useCallback((filters: FilterOptions) => {
     const filtered = filterArticles(allArticles, filters)
     setFilteredArticles(filtered)
-  }
+    
+    // フィルタ適用後は最初のページを表示
+    setCurrentPage(1)
+    const firstPageArticles = filtered.slice(0, ARTICLES_PER_PAGE)
+    setDisplayedArticles(firstPageArticles)
+    setHasNextPage(filtered.length > ARTICLES_PER_PAGE)
+  }, [allArticles])
+
+  // 無限スクロール用の記事追加読み込み
+  const loadMoreArticles = useCallback(() => {
+    if (loadingMore || !hasNextPage) return
+    
+    setLoadingMore(true)
+    
+    // 次のページの記事を取得
+    const nextPage = currentPage + 1
+    const startIndex = (nextPage - 1) * ARTICLES_PER_PAGE
+    const endIndex = startIndex + ARTICLES_PER_PAGE
+    const nextPageArticles = filteredArticles.slice(startIndex, endIndex)
+    
+    if (nextPageArticles.length > 0) {
+      setDisplayedArticles(prev => [...prev, ...nextPageArticles])
+      setCurrentPage(nextPage)
+      setHasNextPage(endIndex < filteredArticles.length)
+    } else {
+      setHasNextPage(false)
+    }
+    
+    setLoadingMore(false)
+  }, [currentPage, filteredArticles, loadingMore, hasNextPage])
+
+  // ページネーション（ページ番号クリック）
+  const goToPage = useCallback((page: number) => {
+    const startIndex = (page - 1) * ARTICLES_PER_PAGE
+    const endIndex = startIndex + ARTICLES_PER_PAGE
+    const pageArticles = filteredArticles.slice(0, endIndex) // 指定ページまでの全記事
+    
+    setDisplayedArticles(pageArticles)
+    setCurrentPage(page)
+    setHasNextPage(endIndex < filteredArticles.length)
+    
+    // スクロール位置をトップに移動
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [filteredArticles])
+
+  // 無限スクロールの監視
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+        loadMoreArticles()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadMoreArticles])
 
   if (loading) {
     return (
@@ -144,6 +299,8 @@ export default function Research() {
       </main>
     )
   }
+
+  const totalPages = Math.ceil(filteredArticles.length / ARTICLES_PER_PAGE)
 
   return (
     <main className="min-h-screen pt-16">
@@ -199,195 +356,188 @@ export default function Research() {
         <div className="container-custom">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1">{filteredArticles.length}</div>
-              <div className="text-sm text-secondary">表示中の記事</div>
+              <div className="text-3xl font-bold text-accent mb-2">{totalCount}</div>
+              <div className="text-sm text-stone-600">総記事数</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1">{allArticles.length}</div>
-              <div className="text-sm text-secondary">総記事数</div>
+              <div className="text-3xl font-bold text-accent mb-2">{filteredArticles.length}</div>
+              <div className="text-sm text-stone-600">検索結果</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1">15</div>
-              <div className="text-sm text-secondary">対象ジャーナル数</div>
+              <div className="text-3xl font-bold text-accent mb-2">{displayedArticles.length}</div>
+              <div className="text-sm text-stone-600">表示中</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-accent mb-1">6:00</div>
-              <div className="text-sm text-secondary">毎日更新時刻</div>
+              <div className="text-3xl font-bold text-accent mb-2">{Math.ceil(totalCount / 30)}</div>
+              <div className="text-sm text-stone-600">月間更新数</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="py-24">
+      {/* Filters & Articles */}
+      <section className="py-16">
         <div className="container-custom">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="heading-lg">AI要約記事</h2>
-            <div className="flex items-center gap-2 text-sm text-secondary">
-              <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
-              <span>自動更新中</span>
+          <div className="lg:grid lg:grid-cols-4 lg:gap-12">
+            {/* Filter Sidebar */}
+            <div className="lg:col-span-1 mb-8 lg:mb-0">
+              <div className="lg:sticky lg:top-24">
+                <ResearchFilters 
+                  onFilterChange={handleFilterChange}
+                  articlesCount={filteredArticles.length}
+                />
+              </div>
+            </div>
+
+            {/* Articles Grid */}
+            <div className="lg:col-span-3">
+              {filteredArticles.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-stone-400 text-xl mb-4">🔍</div>
+                  <h3 className="text-lg font-medium text-stone-700 mb-2">検索結果が見つかりません</h3>
+                  <p className="text-stone-500">フィルターを調整して再度お試しください。</p>
+                </div>
+              ) : (
+                <>
+                  {/* 記事一覧 */}
+                  <div className="grid gap-8 mb-12">
+                    {displayedArticles.map((article) => (
+                      <article 
+                        key={article.id} 
+                        className="bg-white border border-stone-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                        itemScope
+                        itemType="http://schema.org/Article"
+                      >
+                        {/* 記事のヘッダー情報 */}
+                        <div className="flex flex-wrap items-center gap-3 mb-4">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(article.difficulty)}`}>
+                            {getDifficultyLabel(article.difficulty)}
+                          </span>
+                          <span className="text-stone-500 text-sm">{article.read_time}</span>
+                          <time className="text-stone-400 text-sm" itemProp="datePublished" dateTime={article.published_at}>
+                            {new Date(article.published_at).toLocaleDateString('ja-JP')}
+                          </time>
+                        </div>
+
+                        {/* タイトルと要約 */}
+                        <h2 className="text-xl font-semibold text-stone-900 mb-3 leading-tight" itemProp="headline">
+                          <Link 
+                            href={`/research/${article.slug}`}
+                            className="hover:text-accent transition-colors"
+                            itemProp="url"
+                          >
+                            {article.title}
+                          </Link>
+                        </h2>
+                        
+                        <p className="text-stone-600 mb-4 leading-relaxed line-clamp-3" itemProp="description">
+                          {article.summary}
+                        </p>
+
+                        {/* メタデータバッジ */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {article.cancer_types?.slice(0, 2).map((type, index) => (
+                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded" itemProp="about">
+                              {type.split(' - ')[1] || type}
+                            </span>
+                          ))}
+                          {article.treatment_outcomes?.slice(0, 1).map((outcome, index) => (
+                            <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                              {outcome.split(' - ')[1] || outcome}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* 記事情報 */}
+                        <div className="flex items-center justify-between text-sm text-stone-500">
+                          <div className="flex items-center gap-4">
+                            <span itemProp="publisher">📄 {article.journal}</span>
+                            <span>🔗 PubMed ID: {article.pubmed_id}</span>
+                          </div>
+                          <Link 
+                            href={`/research/${article.slug}`}
+                            className="text-accent hover:text-accent-dark font-medium"
+                          >
+                            詳細を読む →
+                          </Link>
+                        </div>
+
+                        {/* 隠れたStructured Data */}
+                        <meta itemProp="author" content="ME≠LABEL AI Research Bot" />
+                        <meta itemProp="dateModified" content={article.updatedAt} />
+                      </article>
+                    ))}
+                  </div>
+
+                  {/* ページネーション */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center">
+                      <nav className="flex items-center gap-2" role="navigation" aria-label="ページネーション">
+                        {/* 前のページ */}
+                        <button
+                          onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-2 text-sm border border-stone-300 rounded-md hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="前のページへ"
+                        >
+                          前へ
+                        </button>
+
+                        {/* ページ番号 */}
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, index) => {
+                          const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + index
+                          if (pageNum > totalPages) return null
+                          
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => goToPage(pageNum)}
+                              className={`px-3 py-2 text-sm border rounded-md ${
+                                pageNum === currentPage
+                                  ? 'bg-accent text-white border-accent'
+                                  : 'border-stone-300 hover:bg-stone-50'
+                              }`}
+                              aria-label={`ページ${pageNum}へ`}
+                              aria-current={pageNum === currentPage ? 'page' : undefined}
+                            >
+                              {pageNum}
+                            </button>
+                          )
+                        })}
+
+                        {/* 次のページ */}
+                        <button
+                          onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-2 text-sm border border-stone-300 rounded-md hover:bg-stone-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="次のページへ"
+                        >
+                          次へ
+                        </button>
+                      </nav>
+                    </div>
+                  )}
+
+                  {/* 無限スクロール読み込み中 */}
+                  {loadingMore && (
+                    <div className="text-center py-8" role="status" aria-live="polite">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto mb-2"></div>
+                      <p className="text-stone-500">記事を読み込み中...</p>
+                    </div>
+                  )}
+
+                  {/* すべて読み込み完了 */}
+                  {!hasNextPage && displayedArticles.length > ARTICLES_PER_PAGE && (
+                    <div className="text-center py-8">
+                      <p className="text-stone-500">すべての記事を表示しました</p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
-
-          {/* フィルタリングコンポーネント */}
-          <ResearchFilters 
-            onFilterChange={handleFilterChange}
-            articlesCount={filteredArticles.length}
-          />
-
-          {filteredArticles.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-secondary">
-                {allArticles.length === 0 
-                  ? '記事がまだありません。Bot実行後、記事が表示されます。'
-                  : '選択した条件に一致する記事が見つかりませんでした。フィルタを調整してください。'
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {filteredArticles.map((article) => (
-                <article key={article.id} className="border border-stone-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                  {/* AI生成バッジ */}
-                  <div className="bg-accent text-white px-6 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">🤖</span>
-                        <span className="font-medium">AI生成記事</span>
-                        <span className="text-teal-200 text-sm">|</span>
-                        <span className="text-teal-200 text-sm">
-                          {article.ai_generated_at ? new Date(article.ai_generated_at).toLocaleString('ja-JP', {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            timeZone: 'Asia/Tokyo'
-                          }) : '不明'}に生成
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(article.difficulty || 'intermediate')}`}>
-                          {getDifficultyLabel(article.difficulty || 'intermediate')}
-                        </span>
-                        <span className="text-teal-200 text-sm">{article.read_time || '3分'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Article Content */}
-                  <div className="p-6">
-                    {/* メタデータ表示 */}
-                    <div className="mb-4">
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 mb-2">
-                        <span className="bg-stone-100 px-2 py-1 rounded">{article.research_type || '研究'}</span>
-                        <span>{article.journal || 'Journal'}</span>
-                        <span>{article.publish_date ? new Date(article.publish_date).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '日付不明'}</span>
-                        <span className="font-mono">{article.pubmed_id || 'PMID: 不明'}</span>
-                      </div>
-                      
-                      {/* Phase 1 メタデータ */}
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {article.cancer_types?.map((type, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md">
-                            🎯 {type}
-                          </span>
-                        ))}
-                        {article.treatment_outcomes?.map((outcome, index) => (
-                          <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md">
-                            📈 {outcome}
-                          </span>
-                        ))}
-                        {article.research_stage && (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-md">
-                            🔬 {article.research_stage}
-                          </span>
-                        )}
-                        {article.japan_availability && (
-                          <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-md">
-                            🏥 {article.japan_availability}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <Link href={`/research/${article.slug}`}>
-                      <h3 className="heading-md mb-3 hover:text-blue-600 transition-colors cursor-pointer">
-                        {article.title}
-                      </h3>
-                    </Link>
-
-                    {article.original_title && (
-                      <div className="mb-4">
-                        <div className="text-xs text-stone-400 mb-1">原論文タイトル：</div>
-                        <div className="text-sm text-stone-600 italic">{article.original_title}</div>
-                      </div>
-                    )}
-
-                    <p className="text-secondary mb-6 leading-relaxed">
-                      {article.summary}
-                    </p>
-
-                    {/* タグ表示 */}
-                    {article.tags && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2">
-                          {article.tags.split(', ').map((tag, index) => (
-                            <span key={index} className="px-2 py-1 bg-stone-100 text-xs rounded-md">
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 患者向けキーワード */}
-                    {article.patient_keywords && article.patient_keywords.length > 0 && (
-                      <div className="border-t border-stone-100 pt-4">
-                        <div className="text-xs text-stone-500 mb-2">患者・当事者向けキーワード：</div>
-                        <div className="flex flex-wrap gap-2">
-                          {article.patient_keywords.map((keyword, index) => (
-                            <span key={index} className="px-2 py-1 bg-accent/10 text-accent text-xs rounded-md">
-                              {keyword}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4 border-t border-stone-100">
-                      <Link 
-                        href={`/research/${article.slug}`}
-                        className="text-accent hover:underline text-sm font-medium"
-                      >
-                        記事を読む →
-                      </Link>
-                      {article.original_url && (
-                        <a 
-                          href={article.original_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-stone-500 hover:text-stone-700 text-xs"
-                        >
-                          原論文を見る ↗
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-12 bg-stone-900 text-stone-50">
-        <div className="container-custom text-center">
-          <p className="text-stone-400">
-            © 2024 ME≠LABEL All rights reserved.
-          </p>
-        </div>
-      </footer>
     </main>
   )
 } 

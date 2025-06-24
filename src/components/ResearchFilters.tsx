@@ -14,7 +14,7 @@ export interface FilterOptions {
 
 interface Props {
   onFilterChange: (filters: FilterOptions) => void
-  articlesCount: number
+  articlesCount?: number
 }
 
 // フィルタ選択肢の定義（OpenAIサービスと一致）
@@ -129,164 +129,166 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
   }
 
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-6 mb-8">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold text-stone-900">記事を絞り込む</h3>
-          <span className="text-sm text-stone-500">
-            {articlesCount}件の記事が見つかりました
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {getActiveFilterCount() > 0 && (
-            <button
-              onClick={clearAllFilters}
-              className="text-sm text-accent hover:underline"
-            >
-              フィルタをクリア ({getActiveFilterCount()})
-            </button>
-          )}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-sm text-stone-600 hover:text-stone-900 flex items-center gap-1"
-          >
-            {isExpanded ? '詳細フィルタを閉じる' : '詳細フィルタを開く'}
-            <span className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-              ▼
+    <div className="bg-white border border-stone-200 rounded-lg mb-8 lg:mb-0 lg:h-fit lg:sticky lg:top-4">
+      {/* ヘッダー（コンパクト） */}
+      <div className="p-4 border-b border-stone-200">
+        <div className="flex flex-col gap-2">
+          <h3 className="text-base font-semibold text-stone-900">記事を絞り込む</h3>
+          {articlesCount !== undefined && (
+            <span className="text-xs text-stone-500">
+              {articlesCount}件の記事が見つかりました
             </span>
-          </button>
-        </div>
-      </div>
-
-      {/* 検索ボックス */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="記事タイトルや内容を検索..."
-          value={filters.searchTerm}
-          onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-          className="w-full px-4 py-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
-        />
-      </div>
-
-      {/* 基本フィルタ（常に表示） */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {/* がん種 */}
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-3">がん種</label>
-          <div className="grid grid-cols-2 gap-2 border border-stone-200 rounded p-3">
-            {FILTER_OPTIONS.cancer_types.map((option) => (
-              <label key={option.value} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={filters.cancer_types.includes(option.value)}
-                  onChange={() => handleCheckboxChange('cancer_types', option.value)}
-                  className="mr-2 text-accent focus:ring-accent"
-                />
-                <span className="text-sm">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* 治療成果 */}
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-3">治療成果</label>
-          <div className="space-y-2">
-            {FILTER_OPTIONS.treatment_outcomes.map((option) => (
-              <label key={option.value} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={filters.treatment_outcomes.includes(option.value)}
-                  onChange={() => handleCheckboxChange('treatment_outcomes', option.value)}
-                  className="mr-2 text-accent focus:ring-accent"
-                />
-                <span className="text-sm">{option.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* 難易度 */}
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-3">難易度</label>
-          <div className="space-y-2">
-            {FILTER_OPTIONS.difficulty.map((option) => (
-              <label key={option.value} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={filters.difficulty.includes(option.value)}
-                  onChange={() => handleCheckboxChange('difficulty', option.value)}
-                  className="mr-2 text-accent focus:ring-accent"
-                />
-                <span className="text-sm">{option.label}</span>
-              </label>
-            ))}
+          )}
+          <div className="flex items-center justify-between">
+            {getActiveFilterCount() > 0 && (
+              <button
+                onClick={clearAllFilters}
+                className="text-xs text-accent hover:underline"
+              >
+                クリア ({getActiveFilterCount()})
+              </button>
+            )}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs text-stone-600 hover:text-stone-900 flex items-center gap-1"
+            >
+              {isExpanded ? '詳細を閉じる' : '詳細を開く'}
+              <span className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 詳細フィルタ（展開時のみ表示） */}
-      {isExpanded && (
-        <div className="border-t border-stone-200 pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 研究段階 */}
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-3">研究段階</label>
-              <div className="space-y-2">
-                {FILTER_OPTIONS.research_stage.map((option) => (
-                  <label key={option.value} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.research_stage.includes(option.value)}
-                      onChange={() => handleCheckboxChange('research_stage', option.value)}
-                      className="mr-2 text-accent focus:ring-accent"
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+      {/* スクロール可能なフィルターコンテンツ */}
+      <div className="overflow-y-auto max-h-[calc(100vh-200px)] lg:max-h-[calc(100vh-150px)]">
+        <div className="p-4 space-y-4">
+          {/* 検索ボックス */}
+          <div>
+            <input
+              type="text"
+              placeholder="記事タイトルや内容を検索..."
+              value={filters.searchTerm}
+              onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-stone-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+            />
+          </div>
 
-            {/* 日本での利用可能性 */}
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-3">日本での利用可能性</label>
-              <div className="space-y-2">
-                {FILTER_OPTIONS.japan_availability.map((option) => (
-                  <label key={option.value} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.japan_availability.includes(option.value)}
-                      onChange={() => handleCheckboxChange('japan_availability', option.value)}
-                      className="mr-2 text-accent focus:ring-accent"
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* がん腫特異性 */}
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-3">がん腫特異性</label>
-              <div className="space-y-2">
-                {FILTER_OPTIONS.cancer_specificity.map((option) => (
-                  <label key={option.value} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.cancer_specificity.includes(option.value)}
-                      onChange={() => handleCheckboxChange('cancer_specificity', option.value)}
-                      className="mr-2 text-accent focus:ring-accent"
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
-                ))}
-              </div>
+          {/* がん種 */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">がん種</label>
+            <div className="grid grid-cols-1 gap-1 border border-stone-200 rounded p-2 max-h-48 overflow-y-auto">
+              {FILTER_OPTIONS.cancer_types.map((option) => (
+                <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                  <input
+                    type="checkbox"
+                    checked={filters.cancer_types.includes(option.value)}
+                    onChange={() => handleCheckboxChange('cancer_types', option.value)}
+                    className="mr-2 text-accent focus:ring-accent"
+                  />
+                  <span className="text-xs">{option.label}</span>
+                </label>
+              ))}
             </div>
           </div>
+
+          {/* 治療成果 */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">治療成果</label>
+            <div className="space-y-1">
+              {FILTER_OPTIONS.treatment_outcomes.map((option) => (
+                <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                  <input
+                    type="checkbox"
+                    checked={filters.treatment_outcomes.includes(option.value)}
+                    onChange={() => handleCheckboxChange('treatment_outcomes', option.value)}
+                    className="mr-2 text-accent focus:ring-accent"
+                  />
+                  <span className="text-xs">{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 難易度 */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-2">難易度</label>
+            <div className="space-y-1">
+              {FILTER_OPTIONS.difficulty.map((option) => (
+                <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                  <input
+                    type="checkbox"
+                    checked={filters.difficulty.includes(option.value)}
+                    onChange={() => handleCheckboxChange('difficulty', option.value)}
+                    className="mr-2 text-accent focus:ring-accent"
+                  />
+                  <span className="text-xs">{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 詳細フィルタ（展開時のみ表示） */}
+          {isExpanded && (
+            <div className="border-t border-stone-200 pt-4 space-y-4">
+              {/* 研究段階 */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">研究段階</label>
+                <div className="space-y-1">
+                  {FILTER_OPTIONS.research_stage.map((option) => (
+                    <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.research_stage.includes(option.value)}
+                        onChange={() => handleCheckboxChange('research_stage', option.value)}
+                        className="mr-2 text-accent focus:ring-accent"
+                      />
+                      <span className="text-xs">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 日本での利用可能性 */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">日本での利用可能性</label>
+                <div className="space-y-1">
+                  {FILTER_OPTIONS.japan_availability.map((option) => (
+                    <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.japan_availability.includes(option.value)}
+                        onChange={() => handleCheckboxChange('japan_availability', option.value)}
+                        className="mr-2 text-accent focus:ring-accent"
+                      />
+                      <span className="text-xs">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* がん腫特異性 */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-2">がん腫特異性</label>
+                <div className="space-y-1">
+                  {FILTER_OPTIONS.cancer_specificity.map((option) => (
+                    <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.cancer_specificity.includes(option.value)}
+                        onChange={() => handleCheckboxChange('cancer_specificity', option.value)}
+                        className="mr-2 text-accent focus:ring-accent"
+                      />
+                      <span className="text-xs">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 } 
