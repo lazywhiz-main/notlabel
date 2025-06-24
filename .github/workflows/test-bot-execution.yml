@@ -50,21 +50,39 @@ jobs:
         echo "📋 必須環境変数:"
         echo "OPENAI_API_KEY: $(if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then echo "✅ 設定済み (長さ: ${#OPENAI_API_KEY})"; else echo "❌ 未設定"; fi)"
         
-        # microCMS APIキーの詳細チェック
-        if [ -n "${{ secrets.MICROCMS_API_KEY }}" ]; then
-          MICROCMS_KEY="${{ secrets.MICROCMS_API_KEY }}"
-          CLEAN_KEY=$(echo "$MICROCMS_KEY" | tr -d '\r\n\t' | xargs)
-          echo "🔑 microCMS API key length: ${#CLEAN_KEY}"
-          echo "🔍 APIキー先頭10文字: ${CLEAN_KEY:0:10}..."
-          if [[ "$CLEAN_KEY" =~ ^[a-zA-Z0-9\-_]+$ ]]; then
-            echo "✅ APIキー形式: 有効な文字のみ"
-          else
-            echo "⚠️  APIキー形式: 無効な文字が含まれている可能性"
-          fi
-          echo "MICROCMS_API_KEY: ✅ 設定済み"
-        else
-          echo "MICROCMS_API_KEY: ❌ 未設定"
-        fi
+                 # microCMS APIキーの詳細チェック
+         if [ -n "${{ secrets.MICROCMS_API_KEY }}" ]; then
+           MICROCMS_KEY="${{ secrets.MICROCMS_API_KEY }}"
+           CLEAN_KEY=$(echo "$MICROCMS_KEY" | tr -d '\r\n\t' | xargs)
+           echo "🔑 microCMS API key length: ${#CLEAN_KEY}"
+           echo "🔍 APIキー先頭10文字: ${CLEAN_KEY:0:10}..."
+           echo "🔍 APIキー末尾10文字: ...${CLEAN_KEY: -10}"
+           
+           # 16進ダンプで隠れた文字をチェック
+           echo "🔍 APIキー16進表示（先頭20バイト）:"
+           echo "$MICROCMS_KEY" | head -c 20 | hexdump -C
+           
+           # 各文字の詳細チェック
+           echo "🔍 無効文字の詳細検出:"
+           echo "$CLEAN_KEY" | sed 's/./&\n/g' | grep -v '^[a-zA-Z0-9_-]$' | head -5
+           
+           if [[ "$CLEAN_KEY" =~ ^[a-zA-Z0-9\-_]+$ ]]; then
+             echo "✅ APIキー形式: 有効な文字のみ"
+           else
+             echo "⚠️  APIキー形式: 無効な文字が含まれている可能性"
+             # 具体的な無効文字を特定
+             echo "🔍 検出された無効文字:"
+             for (( i=0; i<${#CLEAN_KEY}; i++ )); do
+               char="${CLEAN_KEY:$i:1}"
+               if [[ ! "$char" =~ [a-zA-Z0-9\-_] ]]; then
+                 echo "位置 $i: '$char' (ASCII: $(printf "%d" "'$char"))"
+               fi
+             done
+           fi
+           echo "MICROCMS_API_KEY: ✅ 設定済み"
+         else
+           echo "MICROCMS_API_KEY: ❌ 未設定"
+         fi
         
         echo "🏠 microCMS service domain: ${{ secrets.MICROCMS_SERVICE_DOMAIN }}"
         echo "MICROCMS_SERVICE_DOMAIN: $(if [ -n "${{ secrets.MICROCMS_SERVICE_DOMAIN }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
