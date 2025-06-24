@@ -49,8 +49,25 @@ jobs:
         # 必須環境変数のチェック
         echo "📋 必須環境変数:"
         echo "OPENAI_API_KEY: $(if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then echo "✅ 設定済み (長さ: ${#OPENAI_API_KEY})"; else echo "❌ 未設定"; fi)"
-        echo "MICROCMS_API_KEY: $(if [ -n "${{ secrets.MICROCMS_API_KEY }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
-        echo "MICROCMS_SERVICE_DOMAIN: $(if [ -n "${{ secrets.MICROCMS_SERVICE_DOMAIN }}" ]; then echo "✅ 設定済み (${{ secrets.MICROCMS_SERVICE_DOMAIN }})"; else echo "❌ 未設定"; fi)"
+        
+        # microCMS APIキーの詳細チェック
+        if [ -n "${{ secrets.MICROCMS_API_KEY }}" ]; then
+          MICROCMS_KEY="${{ secrets.MICROCMS_API_KEY }}"
+          CLEAN_KEY=$(echo "$MICROCMS_KEY" | tr -d '\r\n\t' | xargs)
+          echo "🔑 microCMS API key length: ${#CLEAN_KEY}"
+          echo "🔍 APIキー先頭10文字: ${CLEAN_KEY:0:10}..."
+          if [[ "$CLEAN_KEY" =~ ^[a-zA-Z0-9\-_]+$ ]]; then
+            echo "✅ APIキー形式: 有効な文字のみ"
+          else
+            echo "⚠️  APIキー形式: 無効な文字が含まれている可能性"
+          fi
+          echo "MICROCMS_API_KEY: ✅ 設定済み"
+        else
+          echo "MICROCMS_API_KEY: ❌ 未設定"
+        fi
+        
+        echo "🏠 microCMS service domain: ${{ secrets.MICROCMS_SERVICE_DOMAIN }}"
+        echo "MICROCMS_SERVICE_DOMAIN: $(if [ -n "${{ secrets.MICROCMS_SERVICE_DOMAIN }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
         echo "SITE_URL: $(if [ -n "${{ secrets.SITE_URL }}" ]; then echo "✅ 設定済み (${{ secrets.SITE_URL }})"; else echo "❌ 未設定"; fi)"
         
         echo ""
