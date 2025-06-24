@@ -25,6 +25,7 @@ env:
 jobs:
   test-bot:
     runs-on: ubuntu-latest
+    environment: production  # 環境を明示的に指定
     
     steps:
     - name: Checkout repository
