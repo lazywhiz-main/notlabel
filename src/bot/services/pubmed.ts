@@ -76,7 +76,7 @@ export class PubMedService {
       params: {
         db: 'pubmed',
         term: query,
-        retmax: 500, // 500件でテスト実行
+        retmax: 50, // 50件でテスト実行
         retmode: 'json',
         sort: 'relevance'
       }
