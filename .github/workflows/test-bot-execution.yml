@@ -1,0 +1,162 @@
+name: Test Bot Execution
+
+on:
+  # 手動実行専用
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'テストモード'
+        required: true
+        default: 'env_check'
+        type: choice
+        options:
+          - env_check
+          - mock_run
+          - real_run
+      debug:
+        description: 'デバッグ出力'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test-bot:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Environment Check
+      if: github.event.inputs.test_mode == 'env_check' || github.event.inputs.test_mode == 'mock_run' || github.event.inputs.test_mode == 'real_run'
+      run: |
+        echo "🔍 詳細な環境変数チェック"
+        echo "========================================"
+        
+        # 必須環境変数のチェック
+        echo "📋 必須環境変数:"
+        echo "OPENAI_API_KEY: $(if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then echo "✅ 設定済み (長さ: ${#OPENAI_API_KEY})"; else echo "❌ 未設定"; fi)"
+        echo "MICROCMS_API_KEY: $(if [ -n "${{ secrets.MICROCMS_API_KEY }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
+        echo "MICROCMS_SERVICE_DOMAIN: $(if [ -n "${{ secrets.MICROCMS_SERVICE_DOMAIN }}" ]; then echo "✅ 設定済み (${{ secrets.MICROCMS_SERVICE_DOMAIN }})"; else echo "❌ 未設定"; fi)"
+        echo "SITE_URL: $(if [ -n "${{ secrets.SITE_URL }}" ]; then echo "✅ 設定済み (${{ secrets.SITE_URL }})"; else echo "❌ 未設定"; fi)"
+        
+        echo ""
+        echo "🐦 SNS関連環境変数:"
+        echo "TWITTER_API_KEY: $(if [ -n "${{ secrets.TWITTER_API_KEY }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
+        echo "TWITTER_API_SECRET: $(if [ -n "${{ secrets.TWITTER_API_SECRET }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
+        echo "TWITTER_ACCESS_TOKEN: $(if [ -n "${{ secrets.TWITTER_ACCESS_TOKEN }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
+        echo "TWITTER_ACCESS_TOKEN_SECRET: $(if [ -n "${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
+        
+        echo ""
+        echo "📊 その他の設定:"
+        echo "SCORE_THRESHOLD: ${{ secrets.SCORE_THRESHOLD || 'デフォルト(4.0)' }}"
+        echo "WEBHOOK_SHEETS_URL: $(if [ -n "${{ secrets.WEBHOOK_SHEETS_URL }}" ]; then echo "✅ 設定済み"; else echo "❌ 未設定"; fi)"
+        
+        echo ""
+        echo "💡 Node.js環境:"
+        echo "Node.js: $(node --version)"
+        echo "npm: $(npm --version)"
+        echo "pwd: $(pwd)"
+        
+        echo ""
+        echo "📁 重要ファイルの存在確認:"
+        echo "src/bot/index.ts: $(if [ -f "src/bot/index.ts" ]; then echo "✅ 存在"; else echo "❌ 不在"; fi)"
+        echo "package.json: $(if [ -f "package.json" ]; then echo "✅ 存在"; else echo "❌ 不在"; fi)"
+        echo ".env: $(if [ -f ".env" ]; then echo "✅ 存在"; else echo "❌ 不在（Actionsでは正常）"; fi)"
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        
+    - name: Mock Bot Run (テスト実行)
+      if: github.event.inputs.test_mode == 'mock_run'
+      run: |
+        echo "🧪 モックボット実行"
+        echo "========================================"
+        
+        # 環境変数設定
+        export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+        export MICROCMS_API_KEY="${{ secrets.MICROCMS_API_KEY }}"
+        export MICROCMS_SERVICE_DOMAIN="${{ secrets.MICROCMS_SERVICE_DOMAIN }}"
+        export SITE_URL="${{ secrets.SITE_URL }}"
+        export SCORE_THRESHOLD="${{ secrets.SCORE_THRESHOLD || '4.0' }}"
+        export DRY_RUN="true"
+        
+        echo "モックデータでテスト実行中..."
+        npm run bot:test 2>&1 | tee mock-execution.log
+        
+        echo ""
+        echo "📊 モック実行結果:"
+        tail -20 mock-execution.log
+        
+    - name: Real Bot Run (本番実行)
+      if: github.event.inputs.test_mode == 'real_run'
+      run: |
+        echo "🚀 本番ボット実行"
+        echo "========================================"
+        echo "⚠️  注意: 実際にmicroCMSに記事が投稿されます"
+        
+        # 環境変数設定
+        export OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+        export MICROCMS_API_KEY="${{ secrets.MICROCMS_API_KEY }}"
+        export MICROCMS_SERVICE_DOMAIN="${{ secrets.MICROCMS_SERVICE_DOMAIN }}"
+        export TWITTER_API_KEY="${{ secrets.TWITTER_API_KEY }}"
+        export TWITTER_API_SECRET="${{ secrets.TWITTER_API_SECRET }}"
+        export TWITTER_ACCESS_TOKEN="${{ secrets.TWITTER_ACCESS_TOKEN }}"
+        export TWITTER_ACCESS_TOKEN_SECRET="${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}"
+        export SITE_URL="${{ secrets.SITE_URL }}"
+        export WEBHOOK_SHEETS_URL="${{ secrets.WEBHOOK_SHEETS_URL }}"
+        export SCORE_THRESHOLD="${{ secrets.SCORE_THRESHOLD || '4.0' }}"
+        export TZ="Asia/Tokyo"
+        
+        echo "本番実行開始..."
+        npm run bot 2>&1 | tee real-execution.log
+        
+        echo ""
+        echo "📊 本番実行結果サマリー:"
+        echo "取得論文数:"
+        grep "件の論文を取得" real-execution.log || echo "ログなし"
+        echo "配信対象:"
+        grep "配信対象" real-execution.log || echo "ログなし"
+        echo "投稿完了:"
+        grep "投稿完了" real-execution.log || echo "ログなし"
+        echo "エラー:"
+        grep -i "error\|エラー" real-execution.log || echo "エラーなし"
+        
+    - name: Upload test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-execution-logs-${{ github.run_number }}-${{ github.event.inputs.test_mode }}
+        path: |
+          *-execution.log
+          logs/
+          *.log
+        retention-days: 30
+        
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "📋 テスト実行サマリー"
+        echo "========================================"
+        echo "テストモード: ${{ github.event.inputs.test_mode }}"
+        echo "実行時刻: $(date)"
+        echo "ステータス: ${{ job.status }}"
+        
+        if [ "${{ github.event.inputs.test_mode }}" = "env_check" ]; then
+          echo "✅ 環境変数チェックが完了しました"
+        elif [ "${{ github.event.inputs.test_mode }}" = "mock_run" ]; then
+          echo "✅ モック実行が完了しました"
+        elif [ "${{ github.event.inputs.test_mode }}" = "real_run" ]; then
+          echo "✅ 本番実行が完了しました"
+        fi 

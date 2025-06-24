@@ -1,15 +1,20 @@
 name: Daily Cancer Research Bot
 
 on:
-  # 毎日午前9時（JST = UTC+9）に実行 = UTC 0時
+  # 毎日午前6時（JST = UTC+9）に実行 = UTC 21時
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 21 * * *'
   
   # 手動実行も可能
   workflow_dispatch:
     inputs:
       debug:
         description: 'デバッグモードで実行'
+        required: false
+        default: 'false'
+        type: boolean
+      dry_run:
+        description: 'ドライラン（実際の投稿なし）'
         required: false
         default: 'false'
         type: boolean
@@ -35,6 +40,17 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Verify environment variables
+      run: |
+        echo "🔍 環境変数の確認..."
+        echo "OPENAI_API_KEY: $(if [ -n "${{ secrets.OPENAI_API_KEY }}" ]; then echo "設定済み"; else echo "未設定"; fi)"
+        echo "MICROCMS_API_KEY: $(if [ -n "${{ secrets.MICROCMS_API_KEY }}" ]; then echo "設定済み"; else echo "未設定"; fi)"
+        echo "MICROCMS_SERVICE_DOMAIN: $(if [ -n "${{ secrets.MICROCMS_SERVICE_DOMAIN }}" ]; then echo "設定済み"; else echo "未設定"; fi)"
+        echo "SITE_URL: $(if [ -n "${{ secrets.SITE_URL }}" ]; then echo "設定済み"; else echo "未設定"; fi)"
+        echo "SCORE_THRESHOLD: ${{ secrets.SCORE_THRESHOLD }}"
+        echo "Debug mode: ${{ github.event.inputs.debug }}"
+        echo "Dry run mode: ${{ github.event.inputs.dry_run }}"
+        
     - name: Setup environment variables
       run: |
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
@@ -46,27 +62,94 @@ jobs:
         echo "TWITTER_ACCESS_TOKEN_SECRET=${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}" >> $GITHUB_ENV
         echo "SITE_URL=${{ secrets.SITE_URL }}" >> $GITHUB_ENV
         echo "WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}" >> $GITHUB_ENV
-        # スコア閾値（デフォルト: 4.5）
-        echo "SCORE_THRESHOLD=${{ secrets.SCORE_THRESHOLD }}" >> $GITHUB_ENV
+        echo "WEBHOOK_SHEETS_URL=${{ secrets.WEBHOOK_SHEETS_URL }}" >> $GITHUB_ENV
+        echo "GOOGLE_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}" >> $GITHUB_ENV
+        echo "GOOGLE_PRIVATE_KEY=${{ secrets.GOOGLE_PRIVATE_KEY }}" >> $GITHUB_ENV
+        echo "GOOGLE_SPREADSHEET_ID=${{ secrets.GOOGLE_SPREADSHEET_ID }}" >> $GITHUB_ENV
+        # スコア閾値（デフォルト: 4.0）
+        echo "SCORE_THRESHOLD=${{ secrets.SCORE_THRESHOLD || '4.0' }}" >> $GITHUB_ENV
+        # ドライランモード
+        echo "DRY_RUN=${{ github.event.inputs.dry_run }}" >> $GITHUB_ENV
         
-    - name: Run research bot
+    - name: Check bot file exists
       run: |
+        echo "🔍 ボットファイルの確認..."
+        if [ -f "src/bot/index.ts" ]; then
+          echo "✅ src/bot/index.ts が存在します"
+        else
+          echo "❌ src/bot/index.ts が見つかりません"
+          exit 1
+        fi
+        
+    - name: Run research bot with detailed logging
+      run: |
+        echo "🤖 がん論文要約Bot実行開始..."
+        echo "実行時刻: $(date)"
+        echo "タイムゾーン: $TZ"
+        echo "Node.jsバージョン: $(node --version)"
+        echo "npmバージョン: $(npm --version)"
+        
+        # 詳細ログを有効化
+        export DEBUG=*
+        export NODE_ENV=production
+        
         if [ "${{ github.event.inputs.debug }}" = "true" ]; then
           echo "🐛 デバッグモードで実行中..."
-          npm run bot:debug
+          npm run bot:debug 2>&1 | tee bot-execution.log
         else
           echo "🤖 本番モードで実行中..."
-          npm run bot
+          npm run bot 2>&1 | tee bot-execution.log
         fi
+        
+        echo "✅ Bot実行完了"
+        echo "実行ログのサイズ: $(wc -l < bot-execution.log) 行"
       env:
         TZ: Asia/Tokyo
         
-    - name: Upload logs (if exists)
+    - name: Display execution summary
+      if: always()
+      run: |
+        echo "📊 実行サマリー"
+        echo "=============================="
+        
+        # ログから重要な情報を抽出
+        if [ -f "bot-execution.log" ]; then
+          echo "📄 取得論文数:"
+          grep "件の論文を取得" bot-execution.log || echo "論文取得ログが見つかりません"
+          
+          echo "🧠 評価結果:"
+          grep "配信対象" bot-execution.log || echo "評価結果ログが見つかりません"
+          
+          echo "📝 投稿結果:"
+          grep "投稿完了" bot-execution.log || echo "投稿完了ログが見つかりません"
+          
+          echo "❌ エラー発生:"
+          grep "エラー\|Error\|ERROR" bot-execution.log || echo "エラーなし"
+          
+          echo "=============================="
+          echo "最後の10行:"
+          tail -10 bot-execution.log
+        else
+          echo "❌ 実行ログファイルが見つかりません"
+        fi
+        
+    - name: Upload execution logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: bot-logs-${{ github.run_number }}
+        name: bot-execution-logs-${{ github.run_number }}
         path: |
+          bot-execution.log
           logs/
           *.log
-        retention-days: 7 
+        retention-days: 30
+        
+    - name: Notify completion
+      if: always()
+      run: |
+        if [ ${{ job.status }} = "success" ]; then
+          echo "🎉 がん論文要約Bot実行完了 - 成功"
+        else
+          echo "💥 がん論文要約Bot実行完了 - 失敗"
+          exit 1
+        fi 

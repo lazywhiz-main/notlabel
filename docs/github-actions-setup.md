@@ -1,231 +1,130 @@
-# GitHub Actions 設定ガイド
+# GitHub Actions ボット自動実行設定ガイド
 
-このガイドでは、がん研究論文の自動収集・投稿システムをGitHub Actionsで設定する方法を説明します。
+## 1. GitHub Secrets の設定
 
-## 📋 概要
+### 必須環境変数
 
-**自動化される処理**:
-1. 毎日午前9時（JST）にPubMedから最新論文を取得
-2. GPTによる論文評価・フィルタリング
-3. 高品質論文のmicroCMS記事作成
-4. Twitter自動投稿（またはGoogle Sheets保存）
+GitHubリポジトリの「Settings」→「Secrets and variables」→「Actions」で以下を設定：
 
-## 🔧 初期設定
+#### 基本設定
+- `OPENAI_API_KEY`: OpenAI APIキー
+- `MICROCMS_API_KEY`: microCMS APIキー
+- `MICROCMS_SERVICE_DOMAIN`: microCMSサービスドメイン（例: your-service.microcms.io）
+- `SITE_URL`: サイトURL（例: https://your-site.com）
 
-### 1. GitHub Secretsの設定
+#### SNS投稿設定（オプション）
+- `TWITTER_API_KEY`: Twitter API Key
+- `TWITTER_API_SECRET`: Twitter API Secret
+- `TWITTER_ACCESS_TOKEN`: Twitter Access Token
+- `TWITTER_ACCESS_TOKEN_SECRET`: Twitter Access Token Secret
+- `WEBHOOK_SHEETS_URL`: Webhook Sheets URL（代替SNS投稿方法）
 
-GitHubリポジトリの `Settings` > `Secrets and variables` > `Actions` で以下のシークレットを設定してください：
+#### その他の設定
+- `SCORE_THRESHOLD`: スコア閾値（デフォルト: 4.0）
 
-#### 🤖 OpenAI API
-```
-OPENAI_API_KEY=sk-your-openai-api-key
-```
+## 2. ワークフローファイルの説明
 
-#### 📝 microCMS API
-```
-MICROCMS_API_KEY=your-microcms-api-key
-MICROCMS_SERVICE_DOMAIN=your-service-domain
-```
+### daily-research-bot.yml
+- **実行時間**: 毎日午前6時（JST）= UTC 21時
+- **機能**: 本番用の自動実行
+- **手動実行**: 可能（デバッグモード、ドライランモード選択可）
 
-#### 🐦 Twitter API (オプション)
-```
-TWITTER_API_KEY=your-twitter-api-key
-TWITTER_API_SECRET=your-twitter-api-secret
-TWITTER_ACCESS_TOKEN=your-access-token
-TWITTER_ACCESS_TOKEN_SECRET=your-access-token-secret
-```
+### test-bot-execution.yml
+- **実行**: 手動実行のみ
+- **テストモード**:
+  - `env_check`: 環境変数の確認のみ
+  - `mock_run`: テスト実行（実際の投稿なし）
+  - `real_run`: 本番実行（実際に投稿される）
 
-#### 🌐 サイト設定
-```
-SITE_URL=https://your-site.com
-```
+## 3. テスト手順
 
-#### ⚙️ Bot設定 (オプション)
-```
-SCORE_THRESHOLD=4.5
-```
-**説明**: 記事投稿の最低スコア閾値
-- デフォルト: 4.5（厳格な品質基準）
-- 推奨範囲: 4.0-5.0
-- 低く設定 → より多くの記事が投稿
-- 高く設定 → より厳選された記事のみ投稿
+### ステップ1: 環境変数チェック
+1. GitHubリポジトリの「Actions」タブを開く
+2. 「Test Bot Execution」ワークフローを選択
+3. 「Run workflow」をクリック
+4. `test_mode` を `env_check` に設定して実行
+5. ログで環境変数が正しく設定されているか確認
 
-#### 📊 Google Sheets Webhook (オプション)
-```
-WEBHOOK_URL=https://script.google.com/macros/s/your-webhook-id/exec
-```
+### ステップ2: モック実行テスト
+1. `test_mode` を `mock_run` に設定して実行
+2. ボットの動作ログを確認
+3. エラーがないか確認
 
-### 2. ワークフローファイルの確認
+### ステップ3: 本番テスト実行
+1. `test_mode` を `real_run` に設定して実行
+2. 実際にmicroCMSに記事が投稿されることを確認
+3. 投稿内容の品質を確認
 
-`.github/workflows/daily-research-bot.yml` が正しく配置されていることを確認してください。
+### ステップ4: 自動実行の有効化
+- `daily-research-bot.yml` ワークフローが毎日自動実行されることを確認
 
-## ⚙️ Secretsの詳細設定
+## 4. トラブルシューティング
 
-### OpenAI API Key 取得方法
+### よくある問題と解決方法
 
-1. [OpenAI Platform](https://platform.openai.com/) にアクセス
-2. `API keys` ページで新しいキーを作成
-3. `sk-` で始まるキーをコピー
+#### 「Successfully completed」だが記事が投稿されない
+1. **環境変数チェック**: テストワークフローの `env_check` で設定確認
+2. **APIキーの有効性**: OpenAI、microCMSのAPIキーが有効か確認
+3. **権限設定**: microCMS APIキーに記事投稿権限があるか確認
+4. **実行ログ確認**: Artifactからダウンロードできる詳細ログを確認
 
-### microCMS API設定
-
-1. [microCMS](https://microcms.io/) にログイン
-2. プロジェクト設定 > API設定 でAPIキーを確認
-3. サービスドメインは `your-service.microcms.io` の `your-service` 部分
-
-### Twitter API設定（オプション）
-
-1. [Twitter Developer Portal](https://developer.twitter.com/) でアプリケーション作成
-2. Keys and Tokens タブで必要な情報を取得
-3. **重要**: App permissions を「Read and Write」に設定
-
-### Google Sheets Webhook設定（オプション）
-
-1. [Google Apps Script設定ガイド](./google-apps-script-setup.md) を参照
-2. デプロイしたWebアプリのURLを使用
-
-## 🚀 実行スケジュール
-
-### 自動実行
-- **毎日午前9時（JST）** に自動実行
-- Cronスケジュール: `0 0 * * *` (UTC時間)
-
-### 手動実行
-1. GitHubリポジトリの `Actions` タブに移動
-2. `Daily Cancer Research Bot` ワークフローを選択
-3. `Run workflow` をクリック
-4. オプションで「デバッグモード」を有効化可能
-
-## 📊 実行結果の確認
-
-### GitHub Actions UI
-1. `Actions` タブで実行履歴を確認
-2. 各ステップの詳細ログを表示
-3. エラーがある場合は赤いマークで表示
-
-### ログファイル
-- 実行後にログファイルがArtifactとして保存される
-- 7日間保持される
-- デバッグに有用な詳細情報を含む
-
-## 🐛 トラブルシューティング
-
-### よくある問題
-
-#### 1. Secrets設定エラー
-```
-Error: Missing required environment variable
-```
-**解決方法**: GitHub Secretsの設定を再確認
-
-#### 2. API制限エラー
-```
-Error: Rate limit exceeded
-```
-**解決方法**: 
-- OpenAI: 使用量プランを確認
-- Twitter: API使用制限を確認
-
-#### 3. 権限エラー
-```
-Error: Forbidden
-```
-**解決方法**:
-- Twitter: App permissions を確認
-- microCMS: APIキーの権限を確認
-
-### デバッグモード
-
-詳細なログ出力でトラブルシューティング：
-
+#### GitHub Actions実行時のエラー
 ```bash
-# ローカルでのデバッグ
-npm run bot:debug
+# ローカルでの事前テスト
+npm run bot:test
 
-# GitHub Actions でのデバッグ
-# 手動実行時に「デバッグモード」をONにする
+# 環境変数の確認
+echo $OPENAI_API_KEY | wc -c  # 文字数確認
 ```
 
-## 📈 監視とメンテナンス
+#### API制限エラー
+- OpenAI API: レート制限を確認
+- PubMed API: 1秒間に3リクエスト以下に制限
+- microCMS API: プランの制限を確認
 
-### 定期確認項目
+## 5. ログの確認方法
 
-1. **実行状況の確認** (週1回)
-   - GitHub Actions の実行履歴
-   - エラーログの有無
+### GitHub Actionsログ
+1. リポジトリの「Actions」タブ
+2. 該当するワークフロー実行を選択
+3. 各ステップのログを確認
 
-2. **API使用量の確認** (月1回)
-   - OpenAI API使用量
-   - Twitter API使用制限
+### Artifactダウンロード
+1. ワークフロー実行ページの下部「Artifacts」セクション
+2. `bot-execution-logs-XXX` をダウンロード
+3. 詳細な実行ログを確認
 
-3. **記事品質の確認** (週1回)
-   - 生成された記事の内容
-   - 投稿されたSNSコンテンツ
+## 6. 本番運用時の監視
+
+### 推奨監視項目
+- [ ] 毎日の実行ステータス
+- [ ] 取得論文数の推移
+- [ ] 投稿記事数の推移
+- [ ] エラー発生状況
+- [ ] API使用量（OpenAI、microCMS）
 
 ### アラート設定
+GitHub Actionsの失敗時にメール通知を受け取るよう設定することを推奨。
 
-GitHub Actions の失敗時にメール通知を受け取る設定：
+## 7. コスト管理
 
-1. GitHub設定 > Notifications
-2. Actions で失敗時の通知を有効化
+### OpenAI API コスト見積もり
+- 50論文/日 × $0.05/論文 = $2.50/日
+- 月額コスト: 約$75
+- 年額コスト: 約$900
 
-## 🔄 設定変更
+### 運用コスト削減策
+- `SCORE_THRESHOLD` を上げる（高品質な記事のみ投稿）
+- PubMed取得件数を調整（現在50件/日）
+- 週末の実行を停止
 
-### スケジュール変更
+## 8. セキュリティ
 
-`.github/workflows/daily-research-bot.yml` の cron 設定を変更：
+### APIキー管理
+- [ ] GitHub Secretsに保存（リポジトリメンバーも見ることができない）
+- [ ] 定期的なAPIキーのローテーション
+- [ ] 不要な権限の削除
 
-```yaml
-schedule:
-  # 毎日午後2時（JST）に変更する場合
-  - cron: '0 5 * * *'  # UTC 5時 = JST 14時
-```
-
-### 処理内容の変更
-
-#### スコア閾値の調整
-
-GitHub Secrets で `SCORE_THRESHOLD` を設定：
-
-```
-SCORE_THRESHOLD=4.0  # より多くの記事を投稿
-SCORE_THRESHOLD=4.5  # デフォルト（厳格な品質基準）
-SCORE_THRESHOLD=5.0  # 最高品質のみ投稿
-```
-
-#### その他のカスタマイズ
-
-`src/bot/index.ts` を編集して処理ロジックを調整
-
-## 💡 最適化のヒント
-
-### パフォーマンス向上
-- 並列処理の活用
-- API呼び出し回数の最適化
-- キャッシュの活用
-
-### コスト削減
-- OpenAI API の使用量監視
-- 不要な実行の回避
-- 効率的なプロンプト設計
-
-### 品質向上
-- GPT評価基準の調整
-- テンプレートの改善
-- ユーザーフィードバックの反映
-
-## 📚 関連ドキュメント
-
-- [SNS投稿文テンプレート](./sns-post-templates.md)
-- [Google Apps Script設定](./google-apps-script-setup.md)
-- [ボットシステム概要](./bot-system-overview.md)
-
-## 🆘 サポート
-
-問題が発生した場合：
-
-1. GitHub Issues で報告
-2. ログファイルを添付
-3. 再現手順を記載
-
-これで完全自動化されたがん研究論文収集・投稿システムが稼働開始です！🎉 
+### アクセス制御
+- [ ] リポジトリアクセス権限の定期見直し
+- [ ] Actionsの実行権限設定 
