@@ -66,7 +66,7 @@ jobs:
            echo "🔍 無効文字の詳細検出:"
            echo "$CLEAN_KEY" | sed 's/./&\n/g' | grep -v '^[a-zA-Z0-9_-]$' | head -5
            
-           if [[ "$CLEAN_KEY" =~ ^[a-zA-Z0-9\-_]+$ ]]; then
+           if [[ "$CLEAN_KEY" =~ ^[a-zA-Z0-9_-]+$ ]]; then
              echo "✅ APIキー形式: 有効な文字のみ"
            else
              echo "⚠️  APIキー形式: 無効な文字が含まれている可能性"
@@ -74,7 +74,7 @@ jobs:
              echo "🔍 検出された無効文字:"
              for (( i=0; i<${#CLEAN_KEY}; i++ )); do
                char="${CLEAN_KEY:$i:1}"
-               if [[ ! "$char" =~ [a-zA-Z0-9\-_] ]]; then
+               if [[ ! "$char" =~ [a-zA-Z0-9_-] ]]; then
                  echo "位置 $i: '$char' (ASCII: $(printf "%d" "'$char"))"
                fi
              done
