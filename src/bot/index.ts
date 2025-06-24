@@ -32,10 +32,19 @@ async function main() {
     // サービスの初期化
     const pubmedService = new PubMedService()
     const openaiService = new OpenAIService(process.env.OPENAI_API_KEY!)
-    const microcmsService = new MicroCMSService(
-      process.env.MICROCMS_API_KEY!,
-      process.env.MICROCMS_SERVICE_DOMAIN!
-    )
+    
+    // 環境変数のクリーニング
+    const microcmsApiKey = process.env.MICROCMS_API_KEY?.trim().replace(/[\r\n\t]/g, '') || ''
+    const microcmsServiceDomain = process.env.MICROCMS_SERVICE_DOMAIN?.trim() || ''
+    
+    if (!microcmsApiKey || !microcmsServiceDomain) {
+      throw new Error('microCMS credentials are missing or invalid')
+    }
+    
+    console.log(`🔑 microCMS API key length: ${microcmsApiKey.length}`)
+    console.log(`🏠 microCMS service domain: ${microcmsServiceDomain}`)
+    
+    const microcmsService = new MicroCMSService(microcmsApiKey, microcmsServiceDomain)
     
     // SNS投稿サービスの初期化
     let snsService: TwitterService | GoogleSheetsService | WebhookSheetsService | null = null

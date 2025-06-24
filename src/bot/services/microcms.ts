@@ -11,9 +11,22 @@ export class MicroCMSService {
    * @param serviceDomain microCMSサービスドメイン（例：notlabel.microcms.io の場合は "notlabel"）
    */
   constructor(apiKey: string, serviceDomain: string) {
-    this.apiKey = apiKey
-    this.serviceDomain = serviceDomain
+    // APIキーの前後の空白文字、改行文字、特殊文字を除去
+    this.apiKey = apiKey.trim().replace(/[\r\n\t]/g, '')
+    this.serviceDomain = serviceDomain.trim()
     this.baseUrl = `https://${serviceDomain}.microcms.io/api/v1`
+    
+    // APIキーの有効性をチェック
+    if (this.apiKey.length === 0) {
+      throw new Error('microCMS API key is empty after cleaning')
+    }
+    
+    // 不正な文字をチェック
+    if (!/^[a-zA-Z0-9\-_]+$/.test(this.apiKey)) {
+      console.warn('⚠️  APIキーに予期しない文字が含まれています')
+      console.warn(`APIキー長: ${this.apiKey.length}`)
+      console.warn(`APIキー（最初の10文字）: ${this.apiKey.substring(0, 10)}...`)
+    }
   }
   
   /**
