@@ -25,6 +25,63 @@ const getDifficultyLabel = (difficulty: string[] | string) => {
   }
 }
 
+// フィールド値を日本語ラベルに変換するヘルパー関数
+const getJapaneseLabel = (value: string, type: string) => {
+  const labels: Record<string, Record<string, string>> = {
+    cancer_types: {
+      'lung_cancer': '肺がん',
+      'breast_cancer': '乳がん',
+      'colorectal_cancer': '大腸がん',
+      'stomach_cancer': '胃がん',
+      'liver_cancer': '肝がん',
+      'pancreatic_cancer': '膵がん',
+      'prostate_cancer': '前立腺がん',
+      'ovarian_cancer': '卵巣がん',
+      'cervical_cancer': '子宮頸がん',
+      'endometrial_cancer': '子宮体がん',
+      'bladder_cancer': '膀胱がん',
+      'kidney_cancer': '腎がん',
+      'thyroid_cancer': '甲状腺がん',
+      'brain_tumor': '脳腫瘍',
+      'bone_cancer': '骨がん',
+      'leukemia': '白血病',
+      'lymphoma': 'リンパ腫',
+      'multiple_myeloma': '多発性骨髄腫',
+      'skin_cancer': '皮膚がん',
+      'other': 'その他'
+    },
+    treatment_outcomes: {
+      'survival_improvement': '生存率向上',
+      'symptom_relief': '症状緩和',
+      'qol_improvement': 'QOL向上',
+      'side_effect_reduction': '副作用軽減',
+      'progression_delay': '進行抑制',
+      'early_detection': '早期発見'
+    },
+    patient_keywords: {
+      'new_drug': '新薬',
+      'side_effects': '副作用',
+      'survival_rate': '生存率',
+      'quality_of_life': '生活の質',
+      'clinical_trial': '臨床試験',
+      'immunotherapy': '免疫療法',
+      'chemotherapy': '化学療法',
+      'radiation_therapy': '放射線療法',
+      'surgery': '手術',
+      'targeted_therapy': '分子標的療法',
+      'precision_medicine': '精密医療',
+      'biomarker': 'バイオマーカー'
+    },
+    cancer_specificity: {
+      'specific': '特定がん種限定',
+      'pan_cancer': '複数がん種共通',
+      'general': 'がん全般'
+    }
+  }
+
+  return labels[type]?.[value] || value.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+}
+
 interface PageProps {
   params: {
     slug: string
@@ -112,7 +169,7 @@ export default async function ArticlePage({ params }: PageProps) {
           </div>
 
           {/* Title */}
-          <h1 className="heading-xl mb-6">{article.title}</h1>
+          <h1 className="heading-md mb-6">{article.title}</h1>
 
           {/* Original Title */}
           {article.original_title && (
@@ -140,6 +197,115 @@ export default async function ArticlePage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* Phase 1 Metadata */}
+          <div className="mb-8 p-6 bg-stone-50 border border-stone-200 rounded-lg">
+            <h2 className="font-semibold text-stone-700 mb-4">📊 研究詳細情報</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* がん種 */}
+              {article.cancer_types && article.cancer_types.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-blue-700 mb-2">🔵 がん種</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {article.cancer_types.slice(0, 3).map((type, index) => (
+                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                        {getJapaneseLabel(type, 'cancer_types')}
+                      </span>
+                    ))}
+                    {article.cancer_types.length > 3 && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                        +{article.cancer_types.length - 3}件
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 治療成果 */}
+              {article.treatment_outcomes && article.treatment_outcomes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-green-700 mb-2">🟢 治療成果</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {article.treatment_outcomes.slice(0, 3).map((outcome, index) => (
+                      <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                        {getJapaneseLabel(outcome, 'treatment_outcomes')}
+                      </span>
+                    ))}
+                    {article.treatment_outcomes.length > 3 && (
+                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                        +{article.treatment_outcomes.length - 3}件
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 研究段階 */}
+              {article.research_stage && article.research_stage.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-purple-700 mb-2">🟣 研究段階</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(article.research_stage) ? article.research_stage : [article.research_stage]).map((stage, index) => (
+                      <span key={index} className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                        {stage.split(' - ')[1] || stage}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 日本での利用可能性 */}
+              {article.japan_availability && article.japan_availability.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-orange-700 mb-2">🟠 日本での利用可能性</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(article.japan_availability) ? article.japan_availability : [article.japan_availability]).map((availability, index) => (
+                      <span key={index} className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">
+                        {availability.split(' - ')[1] || availability}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 患者向けキーワード */}
+              {article.patient_keywords && article.patient_keywords.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-teal-700 mb-2">🔵 患者向けキーワード</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {article.patient_keywords.slice(0, 4).map((keyword, index) => (
+                      <span key={index} className="px-2 py-1 bg-teal-100 text-teal-700 text-xs rounded">
+                        {getJapaneseLabel(keyword, 'patient_keywords')}
+                      </span>
+                    ))}
+                    {article.patient_keywords.length > 4 && (
+                      <span className="px-2 py-1 bg-teal-100 text-teal-700 text-xs rounded">
+                        +{article.patient_keywords.length - 4}件
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* がん腫特異性 */}
+              {article.cancer_specificity && article.cancer_specificity.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">⚫ がん腫特異性</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(article.cancer_specificity) ? article.cancer_specificity : [article.cancer_specificity]).map((specificity, index) => {
+                      const label = getJapaneseLabel(specificity, 'cancer_specificity')
+                      return (
+                        <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

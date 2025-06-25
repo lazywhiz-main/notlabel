@@ -24,9 +24,10 @@ export interface ResearchArticle {
   // Phase 1メタデータフィールド
   cancer_types?: string[]          // がん種分類
   treatment_outcomes?: string[]    // 治療成果分類
-  research_stage?: string         // 研究段階
-  japan_availability?: string     // 日本での利用可能性
-  patient_keywords?: string[]     // 患者向けキーワード
+  research_stage?: string[]        // 研究段階
+  japan_availability?: string[]    // 日本での利用可能性
+  patient_keywords?: string[]      // 患者向けキーワード
+  cancer_specificity?: string[]    // がん腫特異性
 }
 
 // 統合コンテンツ記事の型定義

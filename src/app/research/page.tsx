@@ -95,6 +95,15 @@ const filterArticles = (articles: ResearchArticleClient[], filters: FilterOption
       if (!hasMatch) return false
     }
 
+    // 患者向けキーワードフィルタ
+    if (filters.patient_keywords.length > 0) {
+      const articleKeywords = Array.isArray(article.patient_keywords) ? article.patient_keywords : []
+      const hasMatch = filters.patient_keywords.some(filter => 
+        articleKeywords.some((keyword: string) => keyword.includes(filter))
+      )
+      if (!hasMatch) return false
+    }
+
     return true
   })
 }
@@ -436,16 +445,52 @@ export default function Research() {
 
                         {/* メタデータバッジ */}
                         <div className="flex flex-wrap gap-2 mb-4">
+                          {/* がん種 */}
                           {article.cancer_types?.slice(0, 2).map((type, index) => (
-                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded" itemProp="about">
+                            <span key={`cancer-${index}`} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded" itemProp="about">
                               {type.split(' - ')[1] || type}
                             </span>
                           ))}
+                          
+                          {/* 治療成果 */}
                           {article.treatment_outcomes?.slice(0, 1).map((outcome, index) => (
-                            <span key={index} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                            <span key={`outcome-${index}`} className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
                               {outcome.split(' - ')[1] || outcome}
                             </span>
                           ))}
+                          
+                          {/* 研究段階 */}
+                          {article.research_stage && article.research_stage.length > 0 && (
+                            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
+                              {article.research_stage[0]?.split(' - ')[1] || article.research_stage[0]}
+                            </span>
+                          )}
+                          
+                          {/* 日本での利用可能性 */}
+                          {article.japan_availability && article.japan_availability.length > 0 && (
+                            <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded">
+                              {article.japan_availability[0]?.split(' - ')[1] || article.japan_availability[0]}
+                            </span>
+                          )}
+                          
+                          {/* 患者向けキーワード（最大2個） */}
+                          {article.patient_keywords?.slice(0, 2).map((keyword, index) => (
+                            <span key={`keyword-${index}`} className="px-2 py-1 bg-teal-100 text-teal-700 text-xs rounded">
+                              {keyword.split(' - ')[1] || keyword}
+                            </span>
+                          ))}
+                          
+                          {/* がん腫特異性 */}
+                          {article.cancer_specificity && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                              {Array.isArray(article.cancer_specificity)
+                                ? (article.cancer_specificity[0] === 'specific' ? '特定がん種' : 
+                                   article.cancer_specificity[0] === 'pan_cancer' ? '複数がん種' : 'がん全般')
+                                : (article.cancer_specificity === 'specific' ? '特定がん種' : 
+                                   article.cancer_specificity === 'pan_cancer' ? '複数がん種' : 'がん全般')
+                              }
+                            </span>
+                          )}
                         </div>
 
                         {/* 記事情報 */}

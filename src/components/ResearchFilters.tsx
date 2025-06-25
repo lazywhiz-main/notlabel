@@ -9,6 +9,7 @@ export interface FilterOptions {
   japan_availability: string[]
   difficulty: string[]
   cancer_specificity: string[]
+  patient_keywords: string[]
   searchTerm: string
 }
 
@@ -74,6 +75,20 @@ const FILTER_OPTIONS = {
     { value: 'specific', label: '特定がん種限定' },
     { value: 'pan_cancer', label: '複数がん種共通' },
     { value: 'general', label: 'がん全般' }
+  ],
+  patient_keywords: [
+    { value: 'new_drug', label: '新薬' },
+    { value: 'side_effects', label: '副作用' },
+    { value: 'survival_rate', label: '生存率' },
+    { value: 'quality_of_life', label: '生活の質' },
+    { value: 'clinical_trial', label: '臨床試験' },
+    { value: 'immunotherapy', label: '免疫療法' },
+    { value: 'chemotherapy', label: '化学療法' },
+    { value: 'radiation_therapy', label: '放射線療法' },
+    { value: 'surgery', label: '手術' },
+    { value: 'targeted_therapy', label: '分子標的療法' },
+    { value: 'precision_medicine', label: '精密医療' },
+    { value: 'biomarker', label: 'バイオマーカー' }
   ]
 }
 
@@ -85,6 +100,7 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
     japan_availability: [],
     difficulty: [],
     cancer_specificity: [],
+    patient_keywords: [],
     searchTerm: ''
   })
   const [isExpanded, setIsExpanded] = useState(false)
@@ -115,6 +131,7 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
       japan_availability: [],
       difficulty: [],
       cancer_specificity: [],
+      patient_keywords: [],
       searchTerm: ''
     }
     setFilters(emptyFilters)
@@ -177,15 +194,15 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
 
           {/* がん種 */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">がん種</label>
-            <div className="grid grid-cols-1 gap-1 border border-stone-200 rounded p-2 max-h-48 overflow-y-auto">
+            <label className="block text-sm font-medium text-blue-700 mb-2">🔵 がん種</label>
+            <div className="grid grid-cols-1 gap-1 border border-blue-200 rounded p-2 max-h-48 overflow-y-auto">
               {FILTER_OPTIONS.cancer_types.map((option) => (
-                <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                <label key={option.value} className="flex items-center hover:bg-blue-50 px-1 py-0.5 rounded">
                   <input
                     type="checkbox"
                     checked={filters.cancer_types.includes(option.value)}
                     onChange={() => handleCheckboxChange('cancer_types', option.value)}
-                    className="mr-2 text-accent focus:ring-accent"
+                    className="mr-2 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-xs">{option.label}</span>
                 </label>
@@ -195,15 +212,15 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
 
           {/* 治療成果 */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">治療成果</label>
+            <label className="block text-sm font-medium text-green-700 mb-2">🟢 治療成果</label>
             <div className="space-y-1">
               {FILTER_OPTIONS.treatment_outcomes.map((option) => (
-                <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                <label key={option.value} className="flex items-center hover:bg-green-50 px-1 py-0.5 rounded">
                   <input
                     type="checkbox"
                     checked={filters.treatment_outcomes.includes(option.value)}
                     onChange={() => handleCheckboxChange('treatment_outcomes', option.value)}
-                    className="mr-2 text-accent focus:ring-accent"
+                    className="mr-2 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-xs">{option.label}</span>
                 </label>
@@ -213,7 +230,7 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
 
           {/* 難易度 */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2">難易度</label>
+            <label className="block text-sm font-medium text-stone-700 mb-2">📊 難易度</label>
             <div className="space-y-1">
               {FILTER_OPTIONS.difficulty.map((option) => (
                 <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
@@ -234,15 +251,15 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
             <div className="border-t border-stone-200 pt-4 space-y-4">
               {/* 研究段階 */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">研究段階</label>
+                <label className="block text-sm font-medium text-purple-700 mb-2">🟣 研究段階</label>
                 <div className="space-y-1">
                   {FILTER_OPTIONS.research_stage.map((option) => (
-                    <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                    <label key={option.value} className="flex items-center hover:bg-purple-50 px-1 py-0.5 rounded">
                       <input
                         type="checkbox"
                         checked={filters.research_stage.includes(option.value)}
                         onChange={() => handleCheckboxChange('research_stage', option.value)}
-                        className="mr-2 text-accent focus:ring-accent"
+                        className="mr-2 text-purple-600 focus:ring-purple-500"
                       />
                       <span className="text-xs">{option.label}</span>
                     </label>
@@ -252,15 +269,15 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
 
               {/* 日本での利用可能性 */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">日本での利用可能性</label>
+                <label className="block text-sm font-medium text-orange-700 mb-2">🟠 日本での利用可能性</label>
                 <div className="space-y-1">
                   {FILTER_OPTIONS.japan_availability.map((option) => (
-                    <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                    <label key={option.value} className="flex items-center hover:bg-orange-50 px-1 py-0.5 rounded">
                       <input
                         type="checkbox"
                         checked={filters.japan_availability.includes(option.value)}
                         onChange={() => handleCheckboxChange('japan_availability', option.value)}
-                        className="mr-2 text-accent focus:ring-accent"
+                        className="mr-2 text-orange-600 focus:ring-orange-500"
                       />
                       <span className="text-xs">{option.label}</span>
                     </label>
@@ -270,15 +287,33 @@ export default function ResearchFilters({ onFilterChange, articlesCount }: Props
 
               {/* がん腫特異性 */}
               <div>
-                <label className="block text-sm font-medium text-stone-700 mb-2">がん腫特異性</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">⚫ がん腫特異性</label>
                 <div className="space-y-1">
                   {FILTER_OPTIONS.cancer_specificity.map((option) => (
-                    <label key={option.value} className="flex items-center hover:bg-stone-50 px-1 py-0.5 rounded">
+                    <label key={option.value} className="flex items-center hover:bg-gray-50 px-1 py-0.5 rounded">
                       <input
                         type="checkbox"
                         checked={filters.cancer_specificity.includes(option.value)}
                         onChange={() => handleCheckboxChange('cancer_specificity', option.value)}
-                        className="mr-2 text-accent focus:ring-accent"
+                        className="mr-2 text-gray-600 focus:ring-gray-500"
+                      />
+                      <span className="text-xs">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 患者向けキーワード */}
+              <div>
+                <label className="block text-sm font-medium text-teal-700 mb-2">🔵 患者向けキーワード</label>
+                <div className="grid grid-cols-1 gap-1 border border-teal-200 rounded p-2 max-h-48 overflow-y-auto">
+                  {FILTER_OPTIONS.patient_keywords.map((option) => (
+                    <label key={option.value} className="flex items-center hover:bg-teal-50 px-1 py-0.5 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.patient_keywords.includes(option.value)}
+                        onChange={() => handleCheckboxChange('patient_keywords', option.value)}
+                        className="mr-2 text-teal-600 focus:ring-teal-500"
                       />
                       <span className="text-xs">{option.label}</span>
                     </label>
