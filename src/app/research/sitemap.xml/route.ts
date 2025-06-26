@@ -6,7 +6,7 @@ export async function GET() {
     const data = await getResearchArticles(1000) // 全記事取得
     const articles: ResearchArticle[] = data.contents
     
-    const baseUrl = process.env.SITE_URL || 'https://notlabel.com'
+    const baseUrl = process.env.SITE_URL || 'https://no-label.me'
     
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

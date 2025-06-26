@@ -28,7 +28,7 @@ const testArticles = [
   }
 ] as any[];
 
-const SITE_URL = 'https://notlabel.com';
+const SITE_URL = 'https://no-label.me';
 
 function testAllTemplates() {
   console.log('🧪 投稿文テンプレートテスト開始\n');

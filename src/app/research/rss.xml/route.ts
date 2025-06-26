@@ -6,7 +6,7 @@ export async function GET() {
     const data = await getResearchArticles(50) // 最新50件
     const articles: ResearchArticle[] = data.contents
     
-    const baseUrl = process.env.SITE_URL || 'https://notlabel.com'
+    const baseUrl = process.env.SITE_URL || 'https://no-label.me'
     const buildDate = new Date().toUTCString()
     
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
@@ -65,7 +65,7 @@ export async function GET() {
       <link>${articleUrl}</link>
       <guid isPermaLink="true">${articleUrl}</guid>
       <pubDate>${pubDate}</pubDate>
-      <author>noreply@notlabel.com (ME≠LABEL AI Research Bot)</author>
+      <author>noreply@no-label.me (ME≠LABEL AI Research Bot)</author>
       <category>がん研究</category>
       <category>AI要約</category>
       ${cancerTypes.split(', ').map(type => type ? `<category>${type}</category>` : '').join('')}

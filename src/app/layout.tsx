@@ -36,13 +36,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ja_JP',
-    url: process.env.SITE_URL || 'https://notlabel.com',
+    url: process.env.SITE_URL || 'https://no-label.me',
     siteName: 'ME≠LABEL',
     title: 'ME≠LABEL | わたしは病名じゃない。',
     description: '病気や肩書きによって人が社会からラベリングされ、排除される構造に抗い、"ただのわたし"として生きることを応援するメディア。がん研究論文のAI要約も提供。',
     images: [
       {
-        url: `${process.env.SITE_URL || 'https://notlabel.com'}/og-image.jpg`,
+        url: `${process.env.SITE_URL || 'https://no-label.me'}/og-image.jpg`,
         width: 1200,
         height: 630,
         alt: 'ME≠LABEL',
@@ -53,11 +53,11 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'ME≠LABEL | わたしは病名じゃない。',
     description: '病気や肩書きによって人が社会からラベリングされ、排除される構造に抗い、"ただのわたし"として生きることを応援するメディア。',
-    images: [`${process.env.SITE_URL || 'https://notlabel.com'}/og-image.jpg`],
+    images: [`${process.env.SITE_URL || 'https://no-label.me'}/og-image.jpg`],
     creator: '@ME_NOT_LABEL',
   },
   alternates: {
-    canonical: process.env.SITE_URL || 'https://notlabel.com',
+    canonical: process.env.SITE_URL || 'https://no-label.me',
     types: {
       'application/rss+xml': [
         { url: '/research/rss.xml', title: 'ME≠LABEL Research RSS Feed' },
