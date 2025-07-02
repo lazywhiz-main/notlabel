@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Navigation from '@/components/Navigation'
 import ResearchFilters, { type FilterOptions } from '@/components/ResearchFilters'
-import { getResearchArticlesClient, type ResearchArticleClient } from '@/lib/microcms-client'
+import { getAllResearchArticlesClient, type ResearchArticleClient } from '@/lib/microcms-client'
 import Link from 'next/link'
 
 
@@ -124,8 +124,8 @@ export default function Research() {
     async function fetchAllArticles() {
       try {
         console.log('🔍 microCMSからデータを取得中...')
-        // microCMSの制限により100件ずつ取得
-        const data = await getResearchArticlesClient(100) // microCMSの制限に合わせて100件
+        // 公式ドキュメントに従った全件取得を実行
+        const data = await getAllResearchArticlesClient() // 全件取得
         const articles = data.contents
         console.log(`✅ ${articles.length}件の記事を取得`)
         
